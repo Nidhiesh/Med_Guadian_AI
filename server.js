@@ -646,6 +646,31 @@ app.post('/api/admin/create-doctor', authenticate, async (req, res) => {
     }
 });
 
+// Delete Doctor Endpoint
+app.delete('/api/admin/delete-doctor/:id', authenticate, async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admins only' });
+    try {
+        const doctorId = req.params.id;
+
+        // Verify target is a doctor (can't delete patients or admins this way)
+        const [rows] = await pool.query('SELECT id, name FROM users WHERE id = ? AND role = "doctor"', [doctorId]);
+        if (rows.length === 0) return res.status(404).json({ error: 'Doctor not found' });
+
+        // Remove crypto credentials first (FK constraint)
+        await pool.query('DELETE FROM user_crypto_credentials WHERE user_id = ?', [doctorId]);
+        // Remove auth challenges
+        await pool.query('DELETE FROM auth_challenges WHERE user_id = ?', [doctorId]);
+        // Remove the user
+        await pool.query('DELETE FROM users WHERE id = ?', [doctorId]);
+
+        await logAudit(req.user.id, `Deleted Doctor Account: ${rows[0].name} (ID ${doctorId})`, req.ip, req.headers['user-agent']);
+        res.json({ message: `Doctor account for ${rows[0].name} has been removed.` });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // Database initialization: Seed Admin
 async function seedAdmin() {
     try {

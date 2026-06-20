@@ -107,6 +107,11 @@
     <button type="submit" class="btn">Access Vault</button>
   </form>
 
+  <div id="patient-qr-container" style="display:none; text-align:center; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line);">
+    <p style="font-size:13px; color:var(--muted); margin-bottom:12px;"><strong>Emergency Access</strong><br>Scan for critical health info</p>
+    <img id="persistent-qr-img" src="" alt="Emergency QR Code" style="width: 140px; height: 140px; border-radius: 8px; border: 2px solid var(--line); padding: 8px; background: #fff;">
+  </div>
+
   <!-- Staff Passwordless Login Form -->
   <form id="staff-login-form" onsubmit="handleStaffLogin(event)" style="display:none;">
     <div class="crypto-badge">🔒 Hardware-Backed Cryptographic Login</div>
@@ -157,6 +162,10 @@
       document.getElementById('tab-staff-login').classList.add('active');
       document.getElementById('staff-login-form').style.display = 'block';
     }
+    
+    if (typeof loadPersistentPatientQR === 'function') {
+        loadPersistentPatientQR();
+    }
   }
 
   async function handlePatientLogin(e) {
@@ -175,7 +184,12 @@
       
       localStorage.setItem('medguardian_token', data.token);
       localStorage.setItem('medguardian_user', JSON.stringify(data.user));
-      window.location.href = 'index.html';
+      // Update userid and immediately refresh the QR before redirecting
+      localStorage.setItem('last_patient_userid', userid);
+      loadPersistentPatientQR();
+
+      document.getElementById('success-msg').innerText = 'Login successful! Redirecting...';
+      setTimeout(() => { window.location.href = 'index.html'; }, 1500);
     } catch (err) {
       document.getElementById('error-msg').innerText = err.message;
     }
@@ -269,6 +283,24 @@
       alert("Device registration request sent to Administrators for approval.");
       switchTab('staff-login');
   }
+
+  // Persistent QR Code Logic
+  function loadPersistentPatientQR() {
+      const lastPatientUserId = localStorage.getItem('last_patient_userid');
+      const qrContainer = document.getElementById('patient-qr-container');
+      const isPatientTab = document.getElementById('tab-patient-login').classList.contains('active');
+
+      if (lastPatientUserId && isPatientTab) {
+          const qrUrl = window.location.origin + '/emergency.html?userid=' + encodeURIComponent(lastPatientUserId);
+          document.getElementById('persistent-qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUrl)}&color=0B2545&bgcolor=FFFFFF`;
+          qrContainer.style.display = 'block';
+      } else {
+          qrContainer.style.display = 'none';
+      }
+  }
+
+  // Check on load
+  document.addEventListener('DOMContentLoaded', loadPersistentPatientQR);
 
 </script>
 </body>

@@ -1460,10 +1460,16 @@ async function loadAdminDirectory() {
                   <div style="margin-bottom:24px; padding-bottom:18px; border-bottom:1px solid var(--line);">
                     <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
                       <div class="icon-circle" style="background:var(--navy)"><svg viewBox="0 0 448 512"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/></svg></div>
-                      <div>
+                      <div style="flex:1">
                         <h3 style="font-size:16px; margin:0; color:var(--navy);">Dr. ${doc.name}</h3>
                         <div style="font-size:12px; color:var(--muted); margin-top:2px;">${doc.hospital || 'Independent'} · ${doc.email}</div>
                       </div>
+                      <button onclick="deleteDoctor(${doc.id}, '${doc.name.replace(/'/g, "\\'")}')"
+                        style="background:#FEE2E2; color:#DC2626; border:none; border-radius:8px; padding:6px 14px;
+                        font-size:12px; font-weight:bold; cursor:pointer; transition:background 0.2s;"
+                        onmouseover="this.style.background='#FECACA'" onmouseout="this.style.background='#FEE2E2'">
+                        🗑 Remove
+                      </button>
                     </div>
                 `;
                 
@@ -1492,6 +1498,23 @@ async function loadAdminDirectory() {
         document.getElementById('admin-directory-container').innerHTML = html;
     } catch (err) {
         document.getElementById('admin-directory-container').innerHTML = `<p style="color:var(--coral);">Error: ${err.message}</p>`;
+    }
+}
+
+// ---------- Delete Doctor ----------
+async function deleteDoctor(doctorId, doctorName) {
+    if (!confirm(`Are you sure you want to permanently remove Dr. ${doctorName}'s account?\n\nThis cannot be undone.`)) return;
+    try {
+        const res = await fetch(`${API_BASE}/admin/delete-doctor/${doctorId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to remove doctor');
+        toast(data.message);
+        loadAdminDirectory();
+    } catch (err) {
+        toast(err.message);
     }
 }
 </script>

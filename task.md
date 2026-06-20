@@ -8,6 +8,7 @@
 - [x] 2. Login Frontend (`login.html`)
   - [x] Remove Staff Signup tab and HTML form.
   - [x] Update `handleStaffLogin` to catch `requiresSetup`, generate key pair, and call register automatically.
+  - [x] Persistent Emergency QR code displayed on the login page for the last logged-in patient.
 - [x] 3. Dashboard Frontend (`index.html`)
   - [x] Add UI to Admin Dashboard for creating a new Doctor account.
   - [x] Add JS function to submit the form to the backend.
