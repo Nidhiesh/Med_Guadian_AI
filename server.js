@@ -4,15 +4,29 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 require('dotenv').config();
+const express = require('express');
+const mysql = require('mysql2/promise');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const cors = require('cors');
+require('dotenv').config();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+// On Vercel, the filesystem is read-only. Only create the uploads dir locally.
+const IS_VERCEL = process.env.VERCEL === '1';
 const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
+if (!IS_VERCEL) {
+    try {
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+    } catch (e) {
+        console.warn('Could not create uploads directory:', e.message);
+    }
 }
 
 const storage = multer.diskStorage({
@@ -32,15 +46,18 @@ app.use(express.static(__dirname)); // Serve frontend files from root directory
 
 const JWT_SECRET = 'supersecret_medguardian_key';
 
-// Initialize MySQL pool. You should configure these based on your setup.
+// Initialize MySQL pool using environment variables.
+// Set DB_HOST, DB_USER, DB_PASSWORD, DB_NAME in your Vercel project settings.
 const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: '', // Update with actual DB password
-    database: 'medguardian_db',
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'medguardian_db',
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
 });
 
 // Middleware to verify JWT
@@ -522,67 +539,71 @@ app.get('/api/records/mine', authenticate, async (req, res) => {
     }
 });
 
-app.post('/api/records/upload', authenticate, upload.single('report'), async (req, res) => {
-    if (req.user.role !== 'patient') return res.status(403).json({ error: 'Patients only' });
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-
-    try {
-        const filePath = req.file.path;
-        let analysisText = 'No analysis available.';
-        
-        if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_actual_gemini_api_key_here') {
-            try {
-                const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-                
-                const fileBytes = fs.readFileSync(filePath);
-                const prompt = "You are a medical AI assistant. Extract the key patient details, diagnosis, and any important findings from this health report. Keep it concise, professional, and limit the response to 3-4 sentences maximum.";
-                
-                let mimeType = req.file.mimetype;
-                if (req.file.originalname.toLowerCase().endsWith('.pdf')) {
-                    mimeType = 'application/pdf';
-                }
-
-                const aiResult = await model.generateContent([
-                    prompt,
-                    {
-                        inlineData: {
-                            data: fileBytes.toString("base64"),
-                            mimeType: mimeType
-                        }
-                    }
-                ]);
-                
-                analysisText = "AI Analysis: " + aiResult.response.text();
-            } catch (aiErr) {
-                console.error("AI Error:", aiErr);
-                analysisText = "AI Analysis simulated (API Error): Lab results indicate slightly elevated HbA1c levels. Blood pressure is within normal ranges. Recommended follow-up in 3 months.";
-            }
-        } else {
-            // Simulated extraction when no real API key is present for prototyping
-            analysisText = "AI Analysis (Simulated): Patient shows normal CBC and metabolic panel. Cholesterol is slightly elevated (LDL 130 mg/dL). No acute anomalies detected. Continue current medication plan.";
-        }
-        
-        const extractedTitle = req.file.originalname;
-        const [result] = await pool.query(
-            'INSERT INTO health_records (patient_id, record_type, title, description) VALUES (?, ?, ?, ?)',
-            [req.user.id, 'lab_report', `Uploaded Report: ${extractedTitle}`, analysisText]
-        );
-
-        res.status(201).json({ 
-            message: 'File uploaded and analyzed successfully', 
-            record: {
-                id: result.insertId,
-                patient_id: req.user.id,
-                record_type: 'lab_report',
-                title: `Uploaded Report: ${extractedTitle}`,
-                description: analysisText
-            }
+app.post('/api/records/upload', authenticate, async (req, res, next) => {
+    // Vercel has a read-only filesystem — file uploads are disabled in production.
+    // To enable uploads, deploy on a self-hosted server or use a cloud storage provider (e.g. Cloudinary).
+    if (IS_VERCEL) {
+        return res.status(503).json({
+            error: 'File uploads are not supported in the cloud deployment. Please use the locally hosted version to upload reports.'
         });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Server error' });
     }
+    // Only process upload middleware locally
+    upload.single('report')(req, res, async (uploadErr) => {
+        if (uploadErr) return res.status(400).json({ error: uploadErr.message });
+        if (!req.user || req.user.role !== 'patient') return res.status(403).json({ error: 'Patients only' });
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+        try {
+            const filePath = req.file.path;
+            let analysisText = 'No analysis available.';
+
+            if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_actual_gemini_api_key_here') {
+                try {
+                    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+                    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+                    const fileBytes = fs.readFileSync(filePath);
+                    const prompt = 'You are a medical AI assistant. Extract the key patient details, diagnosis, and any important findings from this health report. Keep it concise, professional, and limit the response to 3-4 sentences maximum.';
+
+                    let mimeType = req.file.mimetype;
+                    if (req.file.originalname.toLowerCase().endsWith('.pdf')) {
+                        mimeType = 'application/pdf';
+                    }
+
+                    const aiResult = await model.generateContent([
+                        prompt,
+                        { inlineData: { data: fileBytes.toString('base64'), mimeType } }
+                    ]);
+                    analysisText = 'AI Analysis: ' + aiResult.response.text();
+                } catch (aiErr) {
+                    console.error('AI Error:', aiErr);
+                    analysisText = 'AI Analysis simulated (API Error): Lab results indicate slightly elevated HbA1c levels. Blood pressure is within normal ranges. Recommended follow-up in 3 months.';
+                }
+            } else {
+                analysisText = 'AI Analysis (Simulated): Patient shows normal CBC and metabolic panel. Cholesterol is slightly elevated (LDL 130 mg/dL). No acute anomalies detected. Continue current medication plan.';
+            }
+
+            const extractedTitle = req.file.originalname;
+            const [result] = await pool.query(
+                'INSERT INTO health_records (patient_id, record_type, title, description) VALUES (?, ?, ?, ?)',
+                [req.user.id, 'lab_report', `Uploaded Report: ${extractedTitle}`, analysisText]
+            );
+
+            res.status(201).json({
+                message: 'File uploaded and analyzed successfully',
+                record: {
+                    id: result.insertId,
+                    patient_id: req.user.id,
+                    record_type: 'lab_report',
+                    title: `Uploaded Report: ${extractedTitle}`,
+                    description: analysisText
+                }
+            });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: 'Server error' });
+        }
+    });
 });
 
 app.get('/api/records/patient/:patient_id', authenticate, async (req, res) => {
@@ -685,5 +706,11 @@ async function seedAdmin() {
 }
 seedAdmin();
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Export the Express app for Vercel serverless functions.
+// When running locally with `node server.js`, this also starts the server.
+if (process.env.VERCEL !== '1') {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+module.exports = app;
