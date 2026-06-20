@@ -133,6 +133,46 @@ async function sendSMS(phone, message) {
     console.log(`[SIMULATED SMS to ${phone}]: ${message}`);
     return { success: false, provider: 'simulation' };
 }
+// --- PUBLIC EMERGENCY ROUTE ---
+app.get('/api/emergency/:userid', async (req, res) => {
+    try {
+        const userid = req.params.userid;
+        if (!userid) {
+            return res.status(400).json({ error: 'UserID is required' });
+        }
+
+        // 1. Fetch patient details
+        const [users] = await pool.query(
+            'SELECT id, name, phone, email, hospital FROM users WHERE userid = ? AND role = "patient"',
+            [userid]
+        );
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'Patient profile not found' });
+        }
+        const patient = users[0];
+
+        // 2. Fetch allergies and prescriptions from health_records
+        const [records] = await pool.query(
+            'SELECT record_type, title, description FROM health_records WHERE patient_id = ? AND record_type IN ("allergy", "prescription") ORDER BY id ASC',
+            [patient.id]
+        );
+
+        const allergies = records.filter(r => r.record_type === 'allergy');
+        const prescriptions = records.filter(r => r.record_type === 'prescription');
+
+        res.json({
+            name: patient.name,
+            phone: patient.phone,
+            email: patient.email,
+            hospital: patient.hospital,
+            allergies: allergies.map(r => ({ title: r.title, description: r.description })),
+            prescriptions: prescriptions.map(r => ({ title: r.title, description: r.description }))
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
 
 // --- AUTH ROUTES ---
 app.post('/api/auth/signup', async (req, res) => {

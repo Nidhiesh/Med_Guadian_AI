@@ -525,10 +525,10 @@
           <h3>Doctor: Scan Patient Card</h3>
           <div class="sub">Simulates a roadside / ER scan with no OTP required</div>
           <div class="qr-wrap">
-            <div class="qr-box" onclick="scanEmergency()">
-              <svg viewBox="0 0 448 512"><path d="M0 32h192v192H0V32zm32 32v128h128V64H32zm224-32h192v192H256V32zm32 32v128h128V64H288zM0 288h192v192H0V288zm32 32v128h128V320H32zm352-32h64v64h-64v-64zm-64 0h32v32h-32v-32zm-32 32h32v32h-32v-32zm64 32h32v32h-32v-32zm-64 32h32v64h-32v-64zm96-32h32v96h-32v-96zM288 320h32v32h-32v-32zm0 64h32v64h-32v-64z"/></svg>
+            <div class="qr-box" onclick="scanEmergency()" style="padding: 12px; background: white; border: 2px solid var(--line); width:160px; height:160px;">
+              <img id="patient-qr-img" src="" alt="Generating QR..." style="width: 132px; height: 132px; display: block; border-radius: 6px;">
             </div>
-            <button class="btn btn-primary" onclick="scanEmergency()">Tap to Scan QR Card</button>
+            <button class="btn btn-primary" onclick="scanEmergency()">Tap to Scan / Open Card</button>
           </div>
         </div>
 
@@ -608,6 +608,13 @@ function logout() {
     loadPendingRequests();
     loadMyRecords();
     loadAllAccessRequests();
+    
+    // Generate emergency QR code pointing to public emergency profile
+    const qrImg = document.getElementById('patient-qr-img');
+    if (qrImg && user && user.userid) {
+      const emergencyUrl = window.location.origin + '/emergency.html?userid=' + encodeURIComponent(user.userid);
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(emergencyUrl)}`;
+    }
   }
 })();
 
@@ -1279,6 +1286,9 @@ renderPharmacies();
 
 // ---------- Emergency QR ----------
 function scanEmergency(){
+  if (user && user.userid) {
+    window.open(`/emergency.html?userid=${encodeURIComponent(user.userid)}`, '_blank');
+  }
   const records = window.patientRecords || [];
   
   let allergies = 'None documented';

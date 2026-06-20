@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedGuardian AI — Emergency Medical Profile</title>
+<style>
+  :root {
+    --danger-red: #D32F2F;
+    --danger-light: #FFEBEE;
+    --danger-border: #FFCDD2;
+    --navy: #0B2545;
+    --teal: #028090;
+    --seafoam: #00A896;
+    --mint: #02C39A;
+    --ink: #1E293B;
+    --muted: #64748B;
+    --paper: #F8FAFC;
+    --white: #FFFFFF;
+    --line: #E2E8F0;
+  }
+  
+  * { box-sizing: border-box; }
+  
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  
+  .container {
+    width: 100%;
+    max-width: 500px;
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(11, 37, 69, 0.08);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    margin-bottom: 40px;
+  }
+  
+  .emergency-header {
+    background: linear-gradient(135deg, var(--danger-red), #B71C1C);
+    color: var(--white);
+    padding: 24px;
+    text-align: center;
+    position: relative;
+  }
+  
+  .emergency-header .pulse-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    animation: pulse 2s infinite;
+  }
+  
+  .emergency-header .pulse-icon svg {
+    width: 32px;
+    height: 32px;
+    fill: var(--white);
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+    70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+  }
+  
+  .emergency-header h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  
+  .emergency-header p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    opacity: 0.9;
+  }
+  
+  .content {
+    padding: 24px;
+  }
+  
+  .section {
+    margin-bottom: 24px;
+  }
+  
+  .section:last-child {
+    margin-bottom: 0;
+  }
+  
+  .section-title {
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 6px;
+  }
+  
+  .patient-card {
+    background: var(--paper);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid var(--line);
+  }
+  
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 14px;
+  }
+  
+  .info-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  
+  .info-row:first-child {
+    padding-top: 0;
+  }
+  
+  .info-row span:first-child {
+    color: var(--muted);
+  }
+  
+  .info-row span:last-child {
+    font-weight: bold;
+    color: var(--navy);
+  }
+  
+  .allergy-alert {
+    background: var(--danger-light);
+    border: 1px solid var(--danger-border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .allergy-alert svg {
+    width: 24px;
+    height: 24px;
+    fill: var(--danger-red);
+    flex-shrink: 0;
+  }
+  
+  .allergy-alert-content {
+    flex: 1;
+  }
+  
+  .allergy-alert-content h3 {
+    margin: 0 0 4px;
+    font-size: 14px;
+    color: #811B1B;
+    font-weight: bold;
+  }
+  
+  .allergy-alert-content p {
+    margin: 0;
+    font-size: 13px;
+    color: #811B1B;
+    line-height: 1.4;
+  }
+  
+  .med-item {
+    background: #F0FDF4;
+    border: 1px solid #DCFCE7;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .med-item:last-child {
+    margin-bottom: 0;
+  }
+  
+  .med-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #CBEFDB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .med-icon svg {
+    width: 16px;
+    height: 16px;
+    fill: #166534;
+  }
+  
+  .med-details {
+    flex: 1;
+  }
+  
+  .med-details b {
+    font-size: 14px;
+    color: #14532D;
+    display: block;
+  }
+  
+  .med-details span {
+    font-size: 12px;
+    color: #166534;
+    display: block;
+    margin-top: 2px;
+  }
+  
+  .no-records {
+    font-size: 13px;
+    color: var(--muted);
+    font-style: italic;
+    background: var(--paper);
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  
+  .footer-note {
+    text-align: center;
+    padding: 16px;
+    font-size: 11px;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    background: var(--paper);
+    line-height: 1.4;
+  }
+  
+  .error-card {
+    text-align: center;
+    padding: 40px 20px;
+  }
+  
+  .error-card svg {
+    width: 48px;
+    height: 48px;
+    fill: var(--danger-red);
+    margin-bottom: 16px;
+  }
+  
+  .error-card h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    color: var(--navy);
+  }
+  
+  .error-card p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="profile-container">
+  <!-- Emergency Banner -->
+  <div class="emergency-header">
+    <div class="pulse-icon">
+      <svg viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c13.3 0 24 10.7 24 24V264c0 13.3-10.7 24-24 24s-24-10.7-24-24V152c0-13.3 10.7-24 24-24zm32 224a32 32 0 1 1-64 0 32 32 0 1 1 64 0z"/></svg>
+    </div>
+    <h1>Emergency Medical Card</h1>
+    <p>Lifesaving Patient Information · MedGuardian AI</p>
+  </div>
+  
+  <div class="content" id="emergency-content">
+    <p style="text-align: center; color: var(--muted); font-size: 14px;">Loading profile...</p>
+  </div>
+  
+  <div class="footer-note">
+    <strong>Security Guard Disclaimer:</strong> Only critical allergies, emergency contact, and prescriptions are publicly visible via this secure QR link. All other medical vault records remain encrypted.
+  </div>
+</div>
+
+<script>
+async function loadEmergencyProfile() {
+    const contentEl = document.getElementById('emergency-content');
+    const urlParams = new URLSearchParams(window.location.search);
+    const userid = urlParams.get('userid');
+    
+    if (!userid) {
+        showError('No Patient UserID Provided', 'Please verify you scanned a valid emergency card.');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/emergency/${userid}`);
+        if (!response.ok) {
+            if (response.status === 404) {
+                showError('Patient Profile Not Found', `No patient matching UserID "${userid}" exists in the system.`);
+            } else {
+                throw new Error('Server responded with an error');
+            }
+            return;
+        }
+        
+        const patient = await response.json();
+        
+        // Render content
+        let html = '';
+        
+        // 1. Patient Info Card
+        html += `
+          <div class="section">
+            <div class="section-title">Patient Identification</div>
+            <div class="patient-card">
+              <div class="info-row">
+                <span>Full Name</span>
+                <span>${escapeHtml(patient.name)}</span>
+              </div>
+              <div class="info-row">
+                <span>Emergency Contact</span>
+                <span>${escapeHtml(patient.phone)}</span>
+              </div>
+              <div class="info-row">
+                <span>Associated Hospital</span>
+                <span>${escapeHtml(patient.hospital || 'Unaffiliated')}</span>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // 2. Allergies Alert Section
+        html += `
+          <div class="section">
+            <div class="section-title">Critical Allergies / Alerts</div>
+        `;
+        
+        if (patient.allergies && patient.allergies.length > 0) {
+            patient.allergies.forEach(allergy => {
+                const allergyName = allergy.title.replace('Allergy on file — ', '').replace('Allergy — ', '');
+                html += `
+                  <div class="allergy-alert" style="margin-bottom: 8px;">
+                    <svg viewBox="0 0 512 512"><path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7.2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8.2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 96c-13.3 0-24 10.7-24 24v104c0 13.3 10.7 24 24 24s24-10.7 24-24V152c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0-64 0 32 32 0 1 0 64 0z"/></svg>
+                    <div class="allergy-alert-content">
+                      <h3>${escapeHtml(allergyName)}</h3>
+                      <p>${escapeHtml(allergy.description || 'Severe reaction risk.')}</p>
+                    </div>
+                  </div>
+                `;
+            });
+        } else {
+            html += `<div class="no-records">No documented allergies on file</div>`;
+        }
+        
+        html += `</div>`;
+        
+        // 3. Active Prescriptions / Medications
+        html += `
+          <div class="section">
+            <div class="section-title">Current Medications</div>
+        `;
+        
+        if (patient.prescriptions && patient.prescriptions.length > 0) {
+            patient.prescriptions.forEach(med => {
+                html += `
+                  <div class="med-item">
+                    <div class="med-icon">
+                      <svg viewBox="0 0 448 512"><path d="M344 0H104C82 0 64 18 64 40v432c0 22 18 40 40 40h240c22 0 40-18 40-40V40c0-22-18-40-40-40zM256 352h-96v-32h96v32zm0-80h-96v-32h96v32zm0-80h-96v-32h96v32z"/></svg>
+                    </div>
+                    <div class="med-details">
+                      <b>${escapeHtml(med.title)}</b>
+                      <span>${escapeHtml(med.description)}</span>
+                    </div>
+                  </div>
+                `;
+            });
+        } else {
+            html += `<div class="no-records">No active prescriptions documented</div>`;
+        }
+        
+        html += `</div>`;
+        
+        contentEl.innerHTML = html;
+        
+    } catch(err) {
+        showError('Network Connection Error', 'Failed to retrieve the emergency profile. Please check your internet connection.');
+    }
+}
+
+function showError(title, desc) {
+    const contentEl = document.getElementById('emergency-content');
+    contentEl.innerHTML = `
+      <div class="error-card">
+        <svg viewBox="0 0 512 512"><path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7.2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8.2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 96c-13.3 0-24 10.7-24 24v104c0 13.3 10.7 24 24 24s24-10.7 24-24V152c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0-64 0 32 32 0 1 0 64 0z"/></svg>
+        <h2>${escapeHtml(title)}</h2>
+        <p>${escapeHtml(desc)}</p>
+      </div>
+    `;
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+window.onload = loadEmergencyProfile;
+</script>
+</body>
+</html>
