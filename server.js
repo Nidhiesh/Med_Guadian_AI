@@ -57,34 +57,18 @@ const authenticate = (req, res, next) => {
 // --- AUTH ROUTES ---
 app.post('/api/auth/signup', async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
-        if (!name || !email || !password || !role) {
-            return res.status(400).json({ error: 'All fields required' });
+        const { name, email, password, hospital } = req.body;
+        // Hardcode role to 'doctor' as patients can no longer sign up directly
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: 'Name, email, and password required' });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
         const [result] = await pool.query(
-            'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
-            [name, email, hashedPassword, role]
+            'INSERT INTO users (name, email, password_hash, role, hospital) VALUES (?, ?, ?, "doctor", ?)',
+            [name, email, hashedPassword, hospital || null]
         );
 
-        if (role === 'patient') {
-            const patientId = result.insertId;
-            const mockRecords = [
-                ['prescription', 'Prescription — Metformin 500mg', 'Uploaded by Dr. R. Iyer'],
-                ['lab_report', 'Lab Report — HbA1c & Lipid Panel', 'City Diagnostics'],
-                ['imaging', 'X-Ray — Chest (routine)', 'Apollo Imaging'],
-                ['allergy', 'Allergy on file — Penicillin', 'Confirmed by Dr. M. Pillai'],
-                ['vaccination', 'Vaccination — Tdap booster', 'Family Clinic']
-            ];
-            for (const rec of mockRecords) {
-                await pool.query(
-                    'INSERT INTO health_records (patient_id, record_type, title, description) VALUES (?, ?, ?, ?)',
-                    [patientId, rec[0], rec[1], rec[2]]
-                );
-            }
-        }
-
-        res.status(201).json({ message: 'User created successfully', id: result.insertId });
+        res.status(201).json({ message: 'Doctor created successfully', id: result.insertId });
     } catch (err) {
         if (err.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({ error: 'Email already exists' });
@@ -96,16 +80,28 @@ app.post('/api/auth/signup', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-        if (rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
+        const { email, password, userid } = req.body;
+        
+        if (userid) {
+            // Patient Login via UserID
+            const [rows] = await pool.query('SELECT * FROM users WHERE userid = ? AND role = "patient"', [userid]);
+            if (rows.length === 0) return res.status(401).json({ error: 'Invalid UserID' });
+            
+            const user = rows[0];
+            const token = jwt.sign({ id: user.id, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '24h' });
+            return res.json({ token, user: { id: user.id, name: user.name, role: user.role, email: user.email, userid: user.userid } });
+        } else {
+            // Doctor Login via Email/Password
+            const [rows] = await pool.query('SELECT * FROM users WHERE email = ? AND role = "doctor"', [email]);
+            if (rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
 
-        const user = rows[0];
-        const isMatch = await bcrypt.compare(password, user.password_hash);
-        if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
+            const user = rows[0];
+            const isMatch = await bcrypt.compare(password, user.password_hash);
+            if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
-        const token = jwt.sign({ id: user.id, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '24h' });
-        res.json({ token, user: { id: user.id, name: user.name, role: user.role, email: user.email } });
+            const token = jwt.sign({ id: user.id, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '24h' });
+            return res.json({ token, user: { id: user.id, name: user.name, role: user.role, email: user.email } });
+        }
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error' });
@@ -117,10 +113,11 @@ app.get('/api/users/patients', authenticate, async (req, res) => {
     if (req.user.role !== 'doctor') return res.status(403).json({ error: 'Doctors only' });
     try {
         const [patients] = await pool.query(`
-            SELECT u.id, u.name, u.email, ar.status 
+            SELECT u.id, u.name, u.email, u.hospital, ar.status 
             FROM users u 
             LEFT JOIN access_requests ar ON u.id = ar.patient_id AND ar.doctor_id = ?
             WHERE u.role = "patient"
+            ORDER BY COALESCE(u.hospital, 'zzz'), u.name
         `, [req.user.id]);
         res.json(patients);
     } catch (err) {
@@ -139,6 +136,73 @@ app.post('/api/access/request', authenticate, async (req, res) => {
             [req.user.id, patient_id]
         );
         res.status(201).json({ message: 'Request sent successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// --- DOCTOR ROUTES --- (continued)
+app.post('/api/doctor/create-patient', authenticate, async (req, res) => {
+    if (req.user.role !== 'doctor') return res.status(403).json({ error: 'Doctors only' });
+    try {
+        const { name, email, phone, userid, hospital, prescriptionTitle, prescriptionDesc, healthIssueTitle, healthIssueDesc } = req.body;
+        if (!name || !email || !phone || !userid) {
+            return res.status(400).json({ error: 'Name, email, phone, and UserID are required' });
+        }
+        
+        // Patients no longer have passwords, use dummy hash
+        const hashedPassword = '*NO_PASSWORD*';
+        
+        // Use a transaction since we are inserting multiple records
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        try {
+            // 1. Create Patient User
+            const [userResult] = await connection.query(
+                'INSERT INTO users (name, email, password_hash, role, hospital, phone, userid) VALUES (?, ?, ?, "patient", ?, ?, ?)',
+                [name, email, hashedPassword, hospital || req.user.hospital || null, phone, userid]
+            );
+            const patientId = userResult.insertId;
+
+            // 2. Grant access to the doctor automatically
+            await connection.query(
+                'INSERT INTO access_requests (doctor_id, patient_id, status) VALUES (?, ?, "approved")',
+                [req.user.id, patientId]
+            );
+
+            // 3. Insert Prescription if provided
+            if (prescriptionTitle && prescriptionDesc) {
+                await connection.query(
+                    'INSERT INTO health_records (patient_id, record_type, title, description) VALUES (?, "prescription", ?, ?)',
+                    [patientId, prescriptionTitle, prescriptionDesc]
+                );
+            }
+
+            // 4. Insert Health Issue (as allergy) if provided
+            if (healthIssueTitle && healthIssueDesc) {
+                await connection.query(
+                    'INSERT INTO health_records (patient_id, record_type, title, description) VALUES (?, "allergy", ?, ?)',
+                    [patientId, healthIssueTitle, healthIssueDesc]
+                );
+            }
+
+            await connection.commit();
+            
+            const smsMessage = `Welcome to MedGuardian! Your UserID is ${userid}. This acts as your login key.`;
+            console.log(`[SIMULATED SMS to ${phone}]: ${smsMessage}`);
+            
+            res.status(201).json({ message: 'Patient created successfully', patientId, simulatedSms: smsMessage });
+        } catch (err) {
+            await connection.rollback();
+            if (err.code === 'ER_DUP_ENTRY') {
+                return res.status(400).json({ error: 'Email or UserID already exists' });
+            }
+            throw err;
+        } finally {
+            connection.release();
+        }
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error' });

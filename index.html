@@ -281,6 +281,7 @@
 
     <!-- data-role: 'patient' = only patients, 'doctor' = only doctors, 'both' = everyone -->
     <button class="nav-item active" data-page="dashboard" id="nav-dashboard"><svg viewBox="0 0 576 512"><path d="M576 256l-64 64H448l-32 96-96-224-32 64H64l-64-64h128l32-64 96 224 32-96h288z"/></svg><span id="nav-dashboard-label">My Health Vault</span></button>
+    <button class="nav-item" data-page="register" data-role="doctor" id="nav-register"><svg viewBox="0 0 640 512"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z"/></svg>Register Patient</button>
     <button class="nav-item" data-page="guardian" data-role="doctor" id="nav-guardian"><svg viewBox="0 0 512 512"><path d="M225.8 468.2l-2.5-2.3L48.1 303.2C19 274.7 0 234.7 0 191.1 0 110.3 65.5 48 144 48c39.1 0 76.3 14.5 104.8 41.5L256 96l7.2-6.5C291.7 62.5 328.9 48 368 48c78.5 0 144 62.3 144 143.1 0 43.6-19 83.6-48.1 112.1L255.8 468.2c-8.8 8.5-22.8 8.5-30 0z"/></svg>AI Medication Guardian</button>
     <button class="nav-item" data-page="fraud" data-role="doctor" id="nav-fraud"><svg viewBox="0 0 512 512"><path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7.2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8.2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0-64 0 32 32 0 1 0 64 0z"/></svg>Fraud Detection</button>
     <button class="nav-item" data-page="emergency" data-role="patient" id="nav-emergency"><svg viewBox="0 0 448 512"><path d="M0 32h192v192H0V32zm32 32v128h128V64H32zm224-32h192v192H256V32zm32 32v128h128V64H288zM0 288h192v192H0V288zm32 32v128h128V320H32zm352-32h64v64h-64v-64zm-64 0h32v32h-32v-32zm-32 32h32v32h-32v-32zm64 32h32v32h-32v-32zm-64 32h32v64h-32v-64zm96-32h32v96h-32v-96zM288 320h32v32h-32v-32zm0 64h32v64h-32v-64z"/></svg>Emergency QR Access</button>
@@ -351,6 +352,7 @@
           <div class="sub">Find patients and request access to their vault</div>
           <div id="patient-list"><p style="font-size:12px; color:var(--muted);">Loading patients...</p></div>
         </div>
+
       </div>
 
       <div class="grid2" id="doctor-patient-view-grid" style="display:none;">
@@ -384,6 +386,46 @@
       </div>
     </div>
 
+    <!-- REGISTER PATIENT -->
+    <div class="page" id="page-register">
+      <div class="pagehead">
+        <h2>Register New Patient</h2>
+        <p>Create an account and initial health records for a new patient.</p>
+      </div>
+      <div class="card" style="max-width: 600px;">
+        <form id="create-patient-form" onsubmit="createPatient(event)">
+          <div class="field-group">
+            <label class="field">Patient Name</label>
+            <input type="text" id="cp-name" required>
+          </div>
+          <div class="field-group">
+            <label class="field">Email Address</label>
+            <input type="email" id="cp-email" required>
+          </div>
+          <div class="field-group">
+            <label class="field">Phone Number</label>
+            <input type="tel" id="cp-phone" placeholder="e.g. 9876543210" required>
+          </div>
+          <div class="field-group">
+            <label class="field">Unique UserID</label>
+            <input type="text" id="cp-userid" placeholder="e.g. PT-123456" required>
+            <small style="color:var(--muted); font-size:11px;">This cannot be changed once created. The patient will use this to log in.</small>
+          </div>
+          <div class="field-group">
+            <label class="field">Prescription Detail (Optional)</label>
+            <input type="text" id="cp-rx-title" placeholder="e.g. Metformin 500mg" style="margin-bottom:6px;">
+            <input type="text" id="cp-rx-desc" placeholder="Instructions e.g. Take 1 after dinner">
+          </div>
+          <div class="field-group">
+            <label class="field">Health Issue / Allergy (Optional)</label>
+            <input type="text" id="cp-hi-title" placeholder="e.g. Allergy — Penicillin" style="margin-bottom:6px;">
+            <input type="text" id="cp-hi-desc" placeholder="Description">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" id="cp-btn">Create Patient Account</button>
+        </form>
+      </div>
+    </div>
+
     <!-- AI MEDICATION GUARDIAN -->
     <div class="page" id="page-guardian">
       <div class="pagehead">
@@ -392,8 +434,17 @@
       </div>
       <div class="grid2">
         <div class="card">
-          <h3>New Prescription — Patient: Aanya Suresh</h3>
-          <div class="sub">Known allergy on file: <b>Penicillin</b> · Condition: Type-2 Diabetes</div>
+          <div class="field-group" style="margin-bottom:18px;">
+            <label class="field" style="font-size:12px; color:var(--muted); margin-bottom:6px; display:block; font-weight:bold;">SELECT PATIENT</label>
+            <select id="guardianPatientSelect" onchange="loadGuardianPatient(this.value)" style="width:100%; padding:11px 14px; border-radius:8px; border:1px solid var(--line); font-size:14px; font-family:inherit; color:var(--navy); background:#fff;">
+              <option value="">— Choose a patient —</option>
+            </select>
+          </div>
+
+          <div id="guardianPatientInfo" style="display:none; background:var(--paper); border-radius:8px; padding:12px 14px; margin-bottom:16px; border-left:3px solid #028090;">
+            <h3 id="guardianPatientTitle" style="margin:0 0 4px; font-size:14px; color:var(--navy);">New Prescription — Patient</h3>
+            <div class="sub" id="guardianPatientSub">Loading patient details...</div>
+          </div>
 
           <div class="field-group">
             <label class="field">Medicine A</label>
@@ -723,26 +774,50 @@ function backToPatientDirectory() {
 let allPatientsData = [];
 
 function renderPatientList(patients) {
-    let html = '';
-    patients.forEach(p => {
-      let actionBtn = '';
-      if (p.status === 'approved') {
-        actionBtn = `<button class="btn btn-ghost" style="padding:7px 14px; font-size:11.5px;" onclick="viewPatientVault(${p.id}, '${p.name}')">View Vault</button>`;
-      } else if (p.status === 'pending') {
-        actionBtn = `<button class="btn btn-ghost" style="padding:7px 14px; font-size:11.5px; opacity:0.6;" disabled>Request Pending</button>`;
-      } else {
-        actionBtn = `<button class="btn btn-primary" style="padding:7px 14px; font-size:11.5px;" onclick="requestAccess(${p.id})">Request Access</button>`;
-      }
+    if (patients.length === 0) {
+        document.getElementById('patient-list').innerHTML = '<p style="font-size:12px; color:var(--muted); text-align:center; padding:20px 0;">No patients found.</p>';
+        return;
+    }
 
-      html += `
-        <div class="vault-item">
-          <div class="icon-circle" style="background:#11304F"><svg viewBox="0 0 448 512"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/></svg></div>
-          <div class="meta"><b>${p.name}</b><span>${p.email}</span></div>
-          ${actionBtn}
-        </div>
-      `;
+    // Group by hospital
+    const groups = {};
+    patients.forEach(p => {
+        const key = p.hospital || 'Unaffiliated / Independent';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(p);
     });
-    document.getElementById('patient-list').innerHTML = html || '<p style="font-size:12px; color:var(--muted); text-align:center;">No patients found.</p>';
+
+    let html = '';
+    Object.keys(groups).sort().forEach(hospital => {
+        html += `
+          <div style="margin-bottom:18px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+              <svg viewBox="0 0 512 512" style="width:13px;height:13px;fill:#028090;flex-shrink:0;"><path d="M192 0C139 0 96 43 96 96V512h320V96c0-53-43-96-96-96H192zm-32 96a32 32 0 1 1 64 0 32 32 0 1 1-64 0zm128 0a32 32 0 1 1 64 0 32 32 0 1 1-64 0zM96 576H32c-17.7 0-32-14.3-32-32V128c0-17.7 14.3-32 32-32h32V576zM480 96h32c17.7 0 32 14.3 32 32v416c0 17.7-14.3 32-32 32h-64V96h32z"/></svg>
+              <span style="font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:.06em; color:#028090;">${hospital}</span>
+              <span style="font-size:10.5px; color:var(--muted); background:var(--line); border-radius:10px; padding:2px 8px;">${groups[hospital].length}</span>
+            </div>
+        `;
+        groups[hospital].forEach(p => {
+            let actionBtn = '';
+            if (p.status === 'approved') {
+                actionBtn = `<button class="btn btn-ghost" style="padding:7px 14px; font-size:11.5px;" onclick="viewPatientVault(${p.id}, '${p.name}')">View Vault</button>`;
+            } else if (p.status === 'pending') {
+                actionBtn = `<button class="btn btn-ghost" style="padding:7px 14px; font-size:11.5px; opacity:0.6;" disabled>Request Pending</button>`;
+            } else {
+                actionBtn = `<button class="btn btn-primary" style="padding:7px 14px; font-size:11.5px;" onclick="requestAccess(${p.id})">Request Access</button>`;
+            }
+            html += `
+              <div class="vault-item" style="margin-left:20px; border-left:2px solid #028090; padding-left:14px; margin-bottom:8px;">
+                <div class="icon-circle" style="background:#11304F"><svg viewBox="0 0 448 512"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/></svg></div>
+                <div class="meta"><b>${p.name}</b><span>${p.email}</span></div>
+                ${actionBtn}
+              </div>
+            `;
+        });
+        html += `</div><hr style="border:none; border-top:1px solid var(--line); margin:14px 0;">`;
+    });
+
+    document.getElementById('patient-list').innerHTML = html;
 }
 
 function filterPatients(query) {
@@ -923,6 +998,10 @@ document.querySelectorAll('.nav-item').forEach(btn=>{
     if (btn.dataset.page === 'consent' && user.role === 'patient') {
       loadAllAccessRequests();
     }
+    // Populate patient selector whenever the guardian tab is opened
+    if (btn.dataset.page === 'guardian' && user.role === 'doctor') {
+      populateGuardianPatients();
+    }
   });
 });
 
@@ -1013,17 +1092,95 @@ const INTERACTIONS = {
   }
 };
 
+// ---- Populate the guardian patient selector from approved patients ----
+let guardianPatientAllergy = null;
+let guardianPatientName = null;
+
+function populateGuardianPatients() {
+    const sel = document.getElementById('guardianPatientSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Choose a patient —</option>';
+    if (!allPatientsData || allPatientsData.length === 0) return;
+    const approved = allPatientsData.filter(p => p.status === 'approved');
+    if (approved.length === 0) {
+        sel.innerHTML += '<option value="" disabled>No approved patients yet</option>';
+        return;
+    }
+    approved.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name + (p.hospital ? ` · ${p.hospital}` : '');
+        sel.appendChild(opt);
+    });
+}
+
+async function loadGuardianPatient(patientId) {
+    const infoBox  = document.getElementById('guardianPatientInfo');
+    const titleEl  = document.getElementById('guardianPatientTitle');
+    const subEl    = document.getElementById('guardianPatientSub');
+    const resultEl = document.getElementById('guardianResult');
+    resultEl.className = 'result';
+
+    if (!patientId) {
+        infoBox.style.display = 'none';
+        guardianPatientAllergy = null;
+        guardianPatientName = null;
+        return;
+    }
+
+    const patient = allPatientsData.find(p => String(p.id) === String(patientId));
+    guardianPatientName = patient ? patient.name : 'Patient';
+    titleEl.textContent = `New Prescription — ${guardianPatientName}`;
+    subEl.textContent = 'Loading patient records…';
+    infoBox.style.display = 'block';
+
+    try {
+        const res = await fetch(`${API_BASE}/records/patient/${patientId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Could not load records');
+        const records = await res.json();
+
+        const allergyRec = records.find(r => r.record_type === 'allergy');
+        const rxRecs     = records.filter(r => r.record_type === 'prescription');
+        guardianPatientAllergy = allergyRec ? allergyRec.title : null;
+
+        let subParts = [];
+        if (allergyRec) subParts.push(`Known allergy: <b>${allergyRec.title.replace('Allergy on file — ','').replace('Allergy — ','')}</b>`);
+        if (rxRecs.length) subParts.push(`On: ${rxRecs.map(r => r.title).join(', ')}`);
+        subEl.innerHTML = subParts.length ? subParts.join(' · ') : 'No allergy or prescription records found.';
+    } catch(e) {
+        subEl.textContent = 'Could not load patient records.';
+        guardianPatientAllergy = null;
+    }
+}
+
 function runGuardian(){
   const a = document.getElementById('medA').value;
   const b = document.getElementById('medB').value;
   const result = document.getElementById('guardianResult');
 
-  // Allergy check first
-  if (a==='amoxicillin' || b==='amoxicillin'){
+  // Require patient selection
+  if (!document.getElementById('guardianPatientSelect').value) {
+    result.className = 'result show danger';
+    result.innerHTML = '<div class="result-head"><b>No patient selected</b></div><p>Please select a patient from the dropdown above before running the safety check.</p>';
+    return;
+  }
+
+  // Allergy check — dynamic based on patient vault
+  const allergyLower = (guardianPatientAllergy || '').toLowerCase();
+  const isPenicillinAllergy = allergyLower.includes('penicillin');
+  if ((a==='amoxicillin' || b==='amoxicillin') && isPenicillinAllergy){
     showGuardianResult(result, true,
-      'Allergy conflict detected',
-      'The patient has a documented allergy to Penicillin. Amoxicillin is in the Penicillin class and may trigger a severe allergic reaction.',
+      `Allergy conflict detected for ${guardianPatientName || 'this patient'}`,
+      `This patient has a documented Penicillin allergy on file. Amoxicillin is in the Penicillin class and may trigger a severe allergic reaction.`,
       96);
+    return;
+  } else if (a==='amoxicillin' || b==='amoxicillin') {
+    showGuardianResult(result, true,
+      'Allergy conflict (Penicillin-class)',
+      'Amoxicillin is a Penicillin-class antibiotic. Verify this patient has no penicillin allergy before prescribing.',
+      72);
     return;
   }
 
@@ -1154,6 +1311,47 @@ function scanEmergency(){
   
   toast('Emergency access logged — patient will be notified');
 }
+// ---------- Create Patient ----------
+async function createPatient(e) {
+  e.preventDefault();
+  const btn = document.getElementById('cp-btn');
+  btn.disabled = true;
+  btn.textContent = 'Creating...';
+
+  const payload = {
+    name: document.getElementById('cp-name').value,
+    email: document.getElementById('cp-email').value,
+    phone: document.getElementById('cp-phone').value,
+    userid: document.getElementById('cp-userid').value.trim(),
+    prescriptionTitle: document.getElementById('cp-rx-title').value,
+    prescriptionDesc: document.getElementById('cp-rx-desc').value,
+    healthIssueTitle: document.getElementById('cp-hi-title').value,
+    healthIssueDesc: document.getElementById('cp-hi-desc').value
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/doctor/create-patient`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to create patient');
+    
+    toast('Patient created successfully!');
+    if (data.simulatedSms) {
+      setTimeout(() => alert('📱 SIMULATED SMS RECEIVED:\n\n' + data.simulatedSms), 500);
+    }
+    document.getElementById('create-patient-form').reset();
+    loadPatients();
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create Patient Account';
+  }
+}
 </script>
 </body>
 </html>
+
