@@ -166,6 +166,73 @@
     font-size:11.5px; font-style:italic;
   }
 
+  /* Doctor Search Bar */
+  .patient-search-wrap {
+    display: none;
+    margin-bottom: 24px;
+    position: relative;
+    max-width: 560px;
+  }
+  .patient-search-wrap.visible { display: block; }
+  .patient-search-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #02C39A, #028090, #0B2545);
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .patient-search-wrap:focus-within::before { opacity: 0; }
+  .patient-search-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 50px;
+    padding: 4px 6px 4px 20px;
+    box-shadow: 0 4px 24px rgba(11,37,69,.12);
+  }
+  .patient-search-inner svg {
+    width: 18px; height: 18px;
+    fill: var(--muted);
+    flex-shrink: 0;
+    margin-right: 10px;
+    transition: fill 0.2s;
+  }
+  .patient-search-wrap:focus-within .patient-search-inner svg { fill: #028090; }
+  .patient-search-inner input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    color: var(--navy);
+    font-family: inherit;
+    padding: 8px 0;
+  }
+  .patient-search-inner input::placeholder { color: var(--muted); }
+  .search-clear-btn {
+    background: var(--line);
+    border: none;
+    border-radius: 50px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    flex-shrink: 0;
+  }
+  .search-clear-btn:hover { background: #E8543B22; color: #E8543B; }
+  .search-count {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    padding-left: 22px;
+  }
+
   /* Consent log */
   table{width:100%; border-collapse:collapse;}
   th{
@@ -216,7 +283,7 @@
     <button class="nav-item active" data-page="dashboard" id="nav-dashboard"><svg viewBox="0 0 576 512"><path d="M576 256l-64 64H448l-32 96-96-224-32 64H64l-64-64h128l32-64 96 224 32-96h288z"/></svg><span id="nav-dashboard-label">My Health Vault</span></button>
     <button class="nav-item" data-page="guardian" data-role="doctor" id="nav-guardian"><svg viewBox="0 0 512 512"><path d="M225.8 468.2l-2.5-2.3L48.1 303.2C19 274.7 0 234.7 0 191.1 0 110.3 65.5 48 144 48c39.1 0 76.3 14.5 104.8 41.5L256 96l7.2-6.5C291.7 62.5 328.9 48 368 48c78.5 0 144 62.3 144 143.1 0 43.6-19 83.6-48.1 112.1L255.8 468.2c-8.8 8.5-22.8 8.5-30 0z"/></svg>AI Medication Guardian</button>
     <button class="nav-item" data-page="fraud" data-role="doctor" id="nav-fraud"><svg viewBox="0 0 512 512"><path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7.2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8.2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0-64 0 32 32 0 1 0 64 0z"/></svg>Fraud Detection</button>
-    <button class="nav-item" data-page="emergency" data-role="doctor" id="nav-emergency"><svg viewBox="0 0 448 512"><path d="M0 32h192v192H0V32zm32 32v128h128V64H32zm224-32h192v192H256V32zm32 32v128h128V64H288zM0 288h192v192H0V288zm32 32v128h128V320H32zm352-32h64v64h-64v-64zm-64 0h32v32h-32v-32zm-32 32h32v32h-32v-32zm64 32h32v32h-32v-32zm-64 32h32v64h-32v-64zm96-32h32v96h-32v-96zM288 320h32v32h-32v-32zm0 64h32v64h-32v-64z"/></svg>Emergency QR Access</button>
+    <button class="nav-item" data-page="emergency" data-role="patient" id="nav-emergency"><svg viewBox="0 0 448 512"><path d="M0 32h192v192H0V32zm32 32v128h128V64H32zm224-32h192v192H256V32zm32 32v128h128V64H288zM0 288h192v192H0V288zm32 32v128h128V320H32zm352-32h64v64h-64v-64zm-64 0h32v32h-32v-32zm-32 32h32v32h-32v-32zm64 32h32v32h-32v-32zm-64 32h32v64h-32v-64zm96-32h32v96h-32v-96zM288 320h32v32h-32v-32zm0 64h32v64h-32v-64z"/></svg>Emergency QR Access</button>
     <button class="nav-item" data-page="consent" data-role="patient" id="nav-consent"><svg viewBox="0 0 576 512"><path d="M572.5 241.4C518.3 135.6 410.9 64 288 64S57.7 135.6 3.5 241.4a32.4 32.4 0 0 0 0 29.2C57.7 376.4 165.1 448 288 448s230.3-71.6 284.5-177.4a32.4 32.4 0 0 0 0-29.2zM288 400a144 144 0 1 1 0-288 144 144 0 1 1 0 288zm0-240a95.3 95.3 0 0 0-25.3 3.8 47.9 47.9 0 0 1-67.4 67.4A95.8 95.8 0 1 0 288 160z"/></svg>Consent Dashboard</button>
 
     <div class="sidebar-foot">
@@ -258,10 +325,7 @@
             <h3>AI Health Timeline</h3>
             <div class="sub">Auto-generated from your records — no manual entry needed</div>
             <div class="timeline" id="patientTimeline">
-              <div class="tl-pt"><div class="tl-dot"></div><b>2018</b><span>Diabetes diagnosed</span></div>
-              <div class="tl-pt"><div class="tl-dot"></div><b>2020</b><span>BP medication started</span></div>
-              <div class="tl-pt"><div class="tl-dot"></div><b>2023</b><span>Penicillin allergy confirmed</span></div>
-              <div class="tl-pt"><div class="tl-dot" style="background:#E8543B"></div><b>2026</b><span>Metformin prescribed</span></div>
+              <!-- Timeline will be rendered dynamically based on actual records -->
             </div>
           </div>
           <div style="margin-top:22px; padding-top:18px; border-top:1px solid var(--line);">
@@ -271,11 +335,51 @@
         </div>
       </div>
       
+      <!-- Standalone doctor search bar -->
+      <div class="patient-search-wrap" id="doctor-search-bar">
+        <div class="patient-search-inner">
+          <svg viewBox="0 0 512 512"><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/></svg>
+          <input type="text" id="patientSearchInput" placeholder="Search patients by name or email…" oninput="filterPatients(this.value)" autocomplete="off">
+          <button class="search-clear-btn" onclick="clearSearch()">Clear</button>
+        </div>
+        <div class="search-count" id="search-count"></div>
+      </div>
+
       <div class="grid2" id="doctor-dashboard-grid" style="display:none;">
         <div class="card">
           <h3>Patient Directory</h3>
           <div class="sub">Find patients and request access to their vault</div>
           <div id="patient-list"><p style="font-size:12px; color:var(--muted);">Loading patients...</p></div>
+        </div>
+      </div>
+
+      <div class="grid2" id="doctor-patient-view-grid" style="display:none;">
+        <div class="card">
+          <h3>Digital Health Vault</h3>
+          <div class="sub">Records authorized for your review</div>
+          <div id="doctor-health-records-container"><p style="font-size:12px; color:var(--muted);">Loading records...</p></div>
+        </div>
+
+        <div class="card">
+          <h3>AI Health Condition Summary</h3>
+          <div class="sub">Automatically synthesized from patient's vault</div>
+          
+          <div class="result safe" style="display:block; margin-top:14px;" id="doctor-ai-summary-box">
+             <div class="result-head">
+               <div class="icon-circle" style="width:30px;height:30px;background:#02C39A"><svg viewBox="0 0 512 512" style="width:14px;height:14px;"><path d="M173.9 439.4L7.5 273C-2.5 263-2.5 249 7.5 239l30.4-30.4c10-10 26-10 36 0l108.4 108.4L322.6 88.4c10-10 26-10 36 0L389 118.8c10 10 10 26 0 36L209.9 439.4c-10 10-26 10-36 0z"/></svg></div>
+               <b id="doctor-ai-status">Status: Stable</b>
+             </div>
+             <p id="doctor-ai-analysis" style="margin-top:8px;">Analyzing records...</p>
+          </div>
+          
+          <div style="margin-top:22px; padding-top:18px; border-top:1px solid var(--line);">
+            <h3 style="margin-bottom:8px;">Clinical Recommendations</h3>
+            <ul style="font-size:13px; color:var(--ink); padding-left:20px; line-height:1.6; margin:0;" id="doctor-ai-recs">
+               <li>Loading...</li>
+            </ul>
+          </div>
+          
+          <button class="btn btn-ghost btn-block" style="margin-top:20px;" onclick="backToPatientDirectory()">← Back to Directory</button>
         </div>
       </div>
     </div>
@@ -444,6 +548,7 @@ function logout() {
     // Show doctor dashboard grid, hide patient grid
     document.getElementById('patient-dashboard-grid').style.display = 'none';
     document.getElementById('doctor-dashboard-grid').style.display = 'grid';
+    document.getElementById('doctor-search-bar').classList.add('visible');
     loadPatients();
   } else {
     // Patient
@@ -488,14 +593,61 @@ function renderRecords(records) {
   document.getElementById('health-records-container').innerHTML = html || '<p style="font-size:12px; color:var(--muted);">No records found.</p>';
 }
 
+function renderDoctorRecords(records) {
+  let html = '';
+  records.forEach(r => {
+    const color = tagColors[r.record_type] || '#64748B';
+    const icon = tagIcons[r.record_type] || '';
+    const tagLabel = r.record_type.replace('_', ' ').toUpperCase();
+    html += `
+      <div class="vault-item">
+        <div class="icon-circle" style="background:${color}"><svg viewBox="0 0 512 512">${icon}</svg></div>
+        <div class="meta"><b>${r.title}</b><span>${r.description}</span></div>
+        <span class="tag" style="color:${color}; background:${color}22;">${tagLabel}</span>
+      </div>
+    `;
+  });
+  document.getElementById('doctor-health-records-container').innerHTML = html || '<p style="font-size:12px; color:var(--muted);">No records found in this vault.</p>';
+}
+
 async function loadMyRecords() {
   try {
     const res = await fetch(`${API_BASE}/records/mine`, { headers: { 'Authorization': `Bearer ${token}` } });
     if (!res.ok) throw new Error('Failed to load records');
-    renderRecords(await res.json());
+    const records = await res.json();
+    window.patientRecords = records;
+    renderRecords(records);
+    renderTimeline(records);
   } catch (err) {
     document.getElementById('health-records-container').innerHTML = '<p style="color:var(--coral);">Error loading records</p>';
   }
+}
+
+function renderTimeline(records) {
+  const timeline = document.getElementById('patientTimeline');
+  if (!records || records.length === 0) {
+    timeline.innerHTML = '<p style="font-size:12px; color:var(--muted); margin:0 auto; padding-top:10px;">No timeline events yet.</p>';
+    return;
+  }
+  
+  const sorted = [...records].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  
+  let html = '';
+  sorted.forEach(r => {
+    const date = new Date(r.created_at);
+    const dateString = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    let color = '#028090'; // Default teal
+    if (r.record_type === 'prescription') color = '#E8543B';
+    else if (r.record_type === 'allergy') color = '#02C39A';
+    else if (r.record_type === 'lab_report') color = '#2E5077';
+    
+    let label = r.record_type.replace('_', ' ');
+    label = label.charAt(0).toUpperCase() + label.slice(1);
+    
+    html += `<div class="tl-pt"><div class="tl-dot" style="background:${color}"></div><b>${dateString}</b><span title="${r.title}">${label} added</span></div>`;
+  });
+  
+  timeline.innerHTML = html;
 }
 
 async function viewPatientVault(patientId, patientName) {
@@ -504,25 +656,73 @@ async function viewPatientVault(patientId, patientName) {
     if (!res.ok) throw new Error('Unauthorized or failed to load records');
     
     document.getElementById('doctor-dashboard-grid').style.display = 'none';
-    document.getElementById('patient-dashboard-grid').style.display = 'grid';
-    document.getElementById('dashboard-title').innerText = `Vault: ${patientName}`;
-    document.getElementById('dashboard-desc').innerText = `Viewing records for ${patientName}. You have authorized access.`;
+    document.getElementById('patient-dashboard-grid').style.display = 'none';
+    document.getElementById('doctor-patient-view-grid').style.display = 'grid';
+    document.getElementById('dashboard-title').innerText = `Patient Profile: ${patientName}`;
+    document.getElementById('dashboard-desc').innerText = `Viewing records and AI health condition summary for ${patientName}.`;
     
-    // Hide the consent section in the patient grid since the doctor shouldn't see it
-    document.getElementById('pending-requests-container').parentElement.style.display = 'none';
+    const records = await res.json();
+    renderDoctorRecords(records);
     
-    renderRecords(await res.json());
+    // Generate simulated AI summary based on records
+    let analysis = 'The patient has a clear medical history.';
+    let status = 'Status: Stable';
+    let isDanger = false;
+    let recsHTML = '';
+    
+    const hasDiabetes = records.some(r => r.title.toLowerCase().includes('diabetes') || r.description.toLowerCase().includes('diabetes') || r.description.toLowerCase().includes('hba1c'));
+    const hasAllergy = records.find(r => r.record_type === 'allergy');
+    
+    if (hasDiabetes && hasAllergy) {
+        analysis = `Patient is managing Type-2 Diabetes. Confirmed severe allergy to ${hasAllergy.description.split('—').pop() || 'certain medications'}. Regular monitoring of HbA1c is recommended.`;
+        recsHTML = `<li>Strictly avoid ${hasAllergy.description.split('—').pop() || 'allergens'}</li><li>Monitor blood glucose levels</li><li>Schedule routine lipid panel</li>`;
+    } else if (hasDiabetes) {
+        analysis = 'Patient is managing Type-2 Diabetes. Blood sugar trends should be evaluated based on the recent lab reports.';
+        recsHTML = `<li>Monitor blood glucose levels</li><li>Maintain current medication adherence</li>`;
+    } else if (hasAllergy) {
+        analysis = `Patient is generally healthy but has a documented allergy to ${hasAllergy.description}.`;
+        recsHTML = `<li>Strictly avoid ${hasAllergy.description}</li>`;
+    } else {
+        recsHTML = `<li>No specific clinical interventions required at this time</li><li>Maintain annual checkups</li>`;
+    }
+    
+    if (records.length > 0 && records[records.length-1].title.includes('Oxycodone')) {
+        isDanger = true;
+        status = 'Status: Flagged for Review';
+        analysis = 'Warning: Recent addition of high-strength opioids detected in a patient with chronic metabolic conditions. Risk of adverse effects.';
+        recsHTML = `<li style="color:#8A3A2C; font-weight:bold;">Review pain management protocol</li>` + recsHTML;
+    }
+    
+    document.getElementById('doctor-ai-status').innerText = status;
+    document.getElementById('doctor-ai-analysis').innerText = analysis;
+    document.getElementById('doctor-ai-recs').innerHTML = recsHTML;
+    
+    const summaryBox = document.getElementById('doctor-ai-summary-box');
+    if (isDanger) {
+        summaryBox.className = 'result show danger';
+        summaryBox.querySelector('.icon-circle').style.background = '#E8543B';
+        summaryBox.querySelector('svg').innerHTML = '<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7.2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8.2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 96c-13.3 0-24 10.7-24 24v104c0 13.3 10.7 24 24 24s24-10.7 24-24V152c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0-64 0 32 32 0 1 0 64 0z"/>';
+    } else {
+        summaryBox.className = 'result show safe';
+        summaryBox.querySelector('.icon-circle').style.background = '#02C39A';
+        summaryBox.querySelector('svg').innerHTML = '<path d="M173.9 439.4L7.5 273C-2.5 263-2.5 249 7.5 239l30.4-30.4c10-10 26-10 36 0l108.4 108.4L322.6 88.4c10-10 26-10 36 0L389 118.8c10 10 10 26 0 36L209.9 439.4c-10 10-26 10-36 0z"/>';
+    }
+    
   } catch (err) {
     toast(err.message);
   }
 }
 
-async function loadPatients() {
-  try {
-    const res = await fetch(`${API_BASE}/users/patients`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const patients = await res.json();
+function backToPatientDirectory() {
+    document.getElementById('doctor-patient-view-grid').style.display = 'none';
+    document.getElementById('doctor-dashboard-grid').style.display = 'grid';
+    document.getElementById('dashboard-title').innerText = `Patient Directory`;
+    document.getElementById('dashboard-desc').innerText = `Manage your patients and request access to their health records securely.`;
+}
+
+let allPatientsData = [];
+
+function renderPatientList(patients) {
     let html = '';
     patients.forEach(p => {
       let actionBtn = '';
@@ -542,7 +742,35 @@ async function loadPatients() {
         </div>
       `;
     });
-    document.getElementById('patient-list').innerHTML = html || '<p style="font-size:12px; color:var(--muted);">No patients found.</p>';
+    document.getElementById('patient-list').innerHTML = html || '<p style="font-size:12px; color:var(--muted); text-align:center;">No patients found.</p>';
+}
+
+function filterPatients(query) {
+    const q = (query || '').toLowerCase().trim();
+    const filtered = q ? allPatientsData.filter(p => p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q)) : allPatientsData;
+    renderPatientList(filtered);
+    const countEl = document.getElementById('search-count');
+    if (q && countEl) {
+        countEl.textContent = filtered.length === 0 ? 'No patients match your search' : `${filtered.length} patient${filtered.length !== 1 ? 's' : ''} found`;
+    } else if (countEl) {
+        countEl.textContent = allPatientsData.length > 0 ? `${allPatientsData.length} patient${allPatientsData.length !== 1 ? 's' : ''} in directory` : '';
+    }
+}
+
+function clearSearch() {
+    const input = document.getElementById('patientSearchInput');
+    if (input) input.value = '';
+    filterPatients('');
+}
+
+async function loadPatients() {
+  try {
+    const res = await fetch(`${API_BASE}/users/patients`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    allPatientsData = await res.json();
+    const searchInput = document.getElementById('patientSearchInput');
+    filterPatients(searchInput ? searchInput.value : '');
   } catch (err) {
     console.error(err);
   }
@@ -748,16 +976,7 @@ async function uploadReport() {
     `;
     resultDiv.style.display = 'block';
     
-    // Add point to timeline to show patient details were updated
-    const timeline = document.getElementById('patientTimeline');
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const newPoint = document.createElement('div');
-    newPoint.className = 'tl-pt';
-    newPoint.innerHTML = `<div class="tl-dot" style="background:#02C39A"></div><b>${currentYear}</b><span>New record added</span>`;
-    timeline.appendChild(newPoint);
-
-    // Refresh records
+    // Refresh records to auto-update both vault and timeline
     loadMyRecords();
     
     fileInput.value = '';
@@ -903,9 +1122,36 @@ renderPharmacies();
 
 // ---------- Emergency QR ----------
 function scanEmergency(){
-  document.getElementById('emergencyCard').classList.add('show');
+  const records = window.patientRecords || [];
+  
+  let allergies = 'None documented';
+  const allergyRecord = records.find(r => r.record_type === 'allergy');
+  if (allergyRecord) {
+     allergies = allergyRecord.title + ' - ' + allergyRecord.description;
+  }
+  
+  let medicines = 'None documented';
+  const rxRecords = records.filter(r => r.record_type === 'prescription');
+  if (rxRecords.length > 0) {
+     medicines = rxRecords.map(r => r.title).join(', ');
+  }
+  
+  const card = document.getElementById('emergencyCard');
+  card.innerHTML = `
+    <div class="ef-row"><span>Patient</span><span>${user ? user.name : 'Unknown'}</span></div>
+    <div class="ef-row"><span>Blood group</span><span>Pending (Not in vault)</span></div>
+    <div class="ef-row"><span>Known allergies</span><span>${allergies}</span></div>
+    <div class="ef-row"><span>Current medicines</span><span>${medicines}</span></div>
+    <div class="ef-row"><span>Emergency contact</span><span>On file</span></div>
+    <div class="hidden-note">Not shown: mental health history, insurance details, private reports. This access has been logged and the patient will be notified.</div>
+  `;
+
+  card.classList.add('show');
   document.getElementById('emergencySub').textContent = 'Scan successful — critical data released';
-  document.getElementById('emergencyRow').style.display = '';
+  
+  const erRow = document.getElementById('emergencyRow');
+  if(erRow) erRow.style.display = '';
+  
   toast('Emergency access logged — patient will be notified');
 }
 </script>
