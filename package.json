@@ -1,0 +1,19 @@
+{
+  "name": "medguardian-ai",
+  "version": "1.0.0",
+  "description": "MedGuardian AI prototype with full stack integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.2.0",
+    "mysql2": "^3.9.7"
+  }
+}

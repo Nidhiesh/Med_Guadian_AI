@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MedGuardian AI — Login</title>
+<style>
+  :root{
+    --navy:#0B2545;
+    --navy-2:#11304F;
+    --teal:#028090;
+    --seafoam:#00A896;
+    --mint:#02C39A;
+    --coral:#E8543B;
+    --ink:#1E293B;
+    --muted:#64748B;
+    --paper:#F6FAFA;
+    --white:#FFFFFF;
+    --line:#E2E8EC;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:Calibri, "Segoe UI", Arial, sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+  }
+  .card{
+    background:#fff; border-radius:12px; padding:32px;
+    box-shadow:0 6px 20px rgba(11,37,69,.12);
+    width: 400px;
+    max-width: 90%;
+  }
+  .brand{display:flex; align-items:center; gap:10px; margin-bottom:20px; justify-content:center;}
+  .brand .badge{
+    width:42px;height:42px;border-radius:50%;background:var(--teal);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .brand .badge svg{width:22px;height:22px;fill:#fff;}
+  .brand h1{font-size:22px; color:var(--navy); margin:0; font-family:Cambria, Georgia, serif;}
+  
+  .tabs{display:flex; margin-bottom:24px; border-bottom:2px solid var(--line);}
+  .tab{flex:1; text-align:center; padding:10px; cursor:pointer; font-weight:bold; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-2px;}
+  .tab.active{color:var(--teal); border-bottom-color:var(--teal);}
+
+  .form-group{margin-bottom:16px;}
+  label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px; font-weight:bold;}
+  input, select{
+    width:100%; padding:12px; border-radius:8px; border:1px solid var(--line);
+    font-size:14px; font-family:Calibri; color:var(--ink); background:var(--paper);
+  }
+  .btn{
+    border:none; border-radius:8px; padding:12px; font-size:14px; font-weight:bold;
+    cursor:pointer; transition:transform .1s; width:100%;
+    background:var(--teal); color:#fff;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn:hover{background:#026c79;}
+  
+  .error-msg{color:var(--coral); font-size:12px; margin-bottom:10px; text-align:center; min-height:14px;}
+  
+  #signup-form{display:none;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="brand">
+    <div class="badge"><svg viewBox="0 0 512 512"><path d="M466.5 83.7l-192-80a48.15 48.15 0 0 0-36.9 0l-192 80C27.7 91.1 16 108.6 16 128c0 198.5 114.5 335.7 221.5 380.3a48.09 48.09 0 0 0 36.9 0C360.1 472.6 496 349.3 496 128c0-19.4-11.7-36.9-29.5-44.3z"/></svg></div>
+    <h1>MedGuardian AI</h1>
+  </div>
+  
+  <div class="tabs">
+    <div class="tab active" id="tab-login" onclick="switchTab('login')">Login</div>
+    <div class="tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</div>
+  </div>
+
+  <div class="error-msg" id="error-msg"></div>
+
+  <!-- Login Form -->
+  <form id="login-form" onsubmit="handleLogin(event)">
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" id="login-email" required>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-password" required>
+    </div>
+    <button type="submit" class="btn">Login</button>
+  </form>
+
+  <!-- Signup Form -->
+  <form id="signup-form" onsubmit="handleSignup(event)">
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="signup-name" required>
+    </div>
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" id="signup-email" required>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="signup-password" required>
+    </div>
+    <div class="form-group">
+      <label>Role</label>
+      <select id="signup-role">
+        <option value="patient">Patient</option>
+        <option value="doctor">Doctor</option>
+      </select>
+    </div>
+    <button type="submit" class="btn">Create Account</button>
+  </form>
+</div>
+
+<script>
+  const API_BASE = 'http://localhost:3000/api';
+
+  function switchTab(tab) {
+    document.getElementById('error-msg').innerText = '';
+    if (tab === 'login') {
+      document.getElementById('tab-login').classList.add('active');
+      document.getElementById('tab-signup').classList.remove('active');
+      document.getElementById('login-form').style.display = 'block';
+      document.getElementById('signup-form').style.display = 'none';
+    } else {
+      document.getElementById('tab-signup').classList.add('active');
+      document.getElementById('tab-login').classList.remove('active');
+      document.getElementById('signup-form').style.display = 'block';
+      document.getElementById('login-form').style.display = 'none';
+    }
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('error-msg');
+    errorEl.innerText = '';
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed');
+      
+      localStorage.setItem('medguardian_token', data.token);
+      localStorage.setItem('medguardian_user', JSON.stringify(data.user));
+      window.location.href = 'index.html';
+    } catch (err) {
+      errorEl.innerText = err.message;
+    }
+  }
+
+  async function handleSignup(e) {
+    e.preventDefault();
+    const name = document.getElementById('signup-name').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const role = document.getElementById('signup-role').value;
+    const errorEl = document.getElementById('error-msg');
+    errorEl.innerText = '';
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, role })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Signup failed');
+      
+      alert('Account created successfully! Please login.');
+      switchTab('login');
+      document.getElementById('login-email').value = email;
+      document.getElementById('login-password').value = '';
+    } catch (err) {
+      errorEl.innerText = err.message;
+    }
+  }
+</script>
+</body>
+</html>

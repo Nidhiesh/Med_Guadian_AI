@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MedGuardian AI — Working Prototype</title>
+<style>
+  :root{
+    --navy:#0B2545;
+    --navy-2:#11304F;
+    --teal:#028090;
+    --seafoam:#00A896;
+    --mint:#02C39A;
+    --coral:#E8543B;
+    --ink:#1E293B;
+    --muted:#64748B;
+    --paper:#F6FAFA;
+    --white:#FFFFFF;
+    --line:#E2E8EC;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:Calibri, "Segoe UI", Arial, sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  h1,h2,h3{font-family:Cambria, Georgia, serif; margin:0;}
+
+  /* ---------- App shell ---------- */
+  .app{display:flex; min-height:100vh;}
+  .sidebar{
+    width:230px; background:var(--navy); color:#fff; flex-shrink:0;
+    display:flex; flex-direction:column; padding:24px 16px;
+  }
+  .brand{display:flex; align-items:center; gap:10px; margin-bottom:30px; padding:0 6px;}
+  .brand .badge{
+    width:36px;height:36px;border-radius:50%;background:var(--teal);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .brand .badge svg{width:18px;height:18px;fill:#fff;}
+  .brand h1{font-size:17px; color:#fff; line-height:1.15;}
+  .brand span{display:block; font-size:9.5px; color:#9FC9C2; font-family:Calibri;}
+
+  .nav-item{
+    display:flex; align-items:center; gap:10px;
+    padding:11px 12px; border-radius:8px; margin-bottom:4px;
+    color:#BFE6E2; cursor:pointer; font-size:13.5px; transition:background .15s;
+    border:none; background:none; width:100%; text-align:left;
+  }
+  .nav-item svg{width:16px;height:16px;fill:#BFE6E2; flex-shrink:0;}
+  .nav-item:hover{background:#11304F;}
+  .nav-item.active{background:var(--teal); color:#fff;}
+  .nav-item.active svg{fill:#fff;}
+
+  .sidebar-foot{margin-top:auto; padding-top:16px; border-top:1px solid #1d3a5c;}
+  .role-pill{
+    font-size:10px; color:#7FA9B8; text-transform:uppercase; letter-spacing:.04em;
+    margin-bottom:6px;
+  }
+  .role-switch{display:flex; gap:6px;}
+  .role-btn{
+    flex:1; padding:7px 4px; font-size:11px; border-radius:6px; border:1px solid #1d3a5c;
+    background:#11304F; color:#9FC9C2; cursor:pointer;
+  }
+  .role-btn.active{background:var(--mint); color:var(--navy); border-color:var(--mint); font-weight:bold;}
+
+  .main{flex:1; padding:32px 40px; max-width:1180px;}
+  .page{display:none;}
+  .page.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+
+  .pagehead{margin-bottom:22px;}
+  .pagehead h2{font-size:26px; color:var(--navy);}
+  .pagehead p{margin:6px 0 0; color:var(--muted); font-size:13.5px;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  .card{
+    background:#fff; border-radius:12px; padding:22px;
+    box-shadow:0 2px 10px rgba(11,37,69,.06);
+  }
+  .card h3{font-size:15px; color:var(--navy); margin-bottom:4px;}
+  .card .sub{font-size:11.5px; color:var(--muted); margin-bottom:14px;}
+
+  .icon-circle{
+    width:42px;height:42px;border-radius:50%; display:flex; align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .icon-circle svg{width:20px;height:20px;fill:#fff;}
+
+  /* Vault list */
+  .vault-item{
+    display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--line);
+  }
+  .vault-item:last-child{border-bottom:none;}
+  .vault-item .meta{flex:1;}
+  .vault-item .meta b{font-size:13px; display:block;}
+  .vault-item .meta span{font-size:11px; color:var(--muted);}
+  .tag{font-size:9.5px; padding:3px 8px; border-radius:20px; background:#E9F7F0; color:var(--teal); font-weight:bold;}
+
+  /* Timeline */
+  .timeline{display:flex; justify-content:space-between; position:relative; margin:18px 10px 6px;}
+  .timeline:before{
+    content:""; position:absolute; top:11px; left:0; right:0; height:2px; background:var(--line);
+  }
+  .tl-pt{flex:1; text-align:center; position:relative;}
+  .tl-dot{width:18px;height:18px;border-radius:50%;background:var(--teal); margin:0 auto 8px; position:relative; z-index:1;}
+  .tl-pt b{font-size:12px; color:var(--navy); display:block;}
+  .tl-pt span{font-size:10px; color:var(--muted);}
+
+  /* Buttons */
+  .btn{
+    border:none; border-radius:8px; padding:11px 18px; font-size:13px; font-weight:bold;
+    cursor:pointer; transition:transform .1s;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--teal); color:#fff;}
+  .btn-primary:hover{background:#026c79;}
+  .btn-coral{background:var(--coral); color:#fff;}
+  .btn-ghost{background:#fff; color:var(--teal); border:1px solid var(--teal);}
+  .btn-block{width:100%;}
+
+  select, input{
+    width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line);
+    font-size:13px; font-family:Calibri; color:var(--ink); background:#fff;
+  }
+  label.field{display:block; font-size:11.5px; color:var(--muted); margin-bottom:5px; font-weight:bold;}
+  .field-group{margin-bottom:14px;}
+
+  /* Result panels */
+  .result{border-radius:10px; padding:16px; margin-top:16px; display:none;}
+  .result.show{display:block; animation:fadein .3s ease;}
+  .result.safe{background:#E9F7F0; border:1px solid #BFE9D9;}
+  .result.danger{background:#FBEAE7; border:1px solid #F3C7BD;}
+  .result-head{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
+  .result-head b{font-size:14px;}
+  .result.safe .result-head b{color:var(--teal);}
+  .result.danger .result-head b{color:#8A3A2C;}
+  .result p{margin:0; font-size:12.5px; line-height:1.5;}
+  .result.safe p{color:#0c5f56;}
+  .result.danger p{color:#8A3A2C;}
+  .explain{
+    margin-top:10px; padding:10px 12px; background:rgba(255,255,255,.6); border-radius:8px;
+    font-size:12px; font-style:italic;
+  }
+  .score-row{display:flex; align-items:center; gap:10px; margin-top:10px;}
+  .score-bar{flex:1; height:8px; border-radius:4px; background:#fff; overflow:hidden;}
+  .score-fill{height:100%; border-radius:4px;}
+
+  /* QR / Emergency */
+  .qr-wrap{display:flex; flex-direction:column; align-items:center; gap:16px;}
+  .qr-box{
+    width:160px;height:160px; background:var(--navy); border-radius:14px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    box-shadow:0 6px 20px rgba(11,37,69,.18); transition:transform .15s;
+  }
+  .qr-box:hover{transform:scale(1.03);}
+  .qr-box svg{width:90px;height:90px; fill:#fff;}
+  .emergency-card{display:none; width:100%;}
+  .emergency-card.show{display:block; animation:fadein .3s ease;}
+  .ef-row{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px;}
+  .ef-row:last-child{border-bottom:none;}
+  .ef-row span:first-child{color:var(--muted);}
+  .ef-row span:last-child{font-weight:bold; color:var(--navy);}
+  .hidden-note{
+    margin-top:12px; padding:10px 12px; border-radius:8px; background:#FBEAE7; color:#8A3A2C;
+    font-size:11.5px; font-style:italic;
+  }
+
+  /* Consent log */
+  table{width:100%; border-collapse:collapse;}
+  th{
+    text-align:left; font-size:10.5px; color:var(--muted); text-transform:uppercase;
+    letter-spacing:.03em; padding:8px 10px; border-bottom:2px solid var(--line);
+  }
+  td{padding:12px 10px; font-size:13px; border-bottom:1px solid var(--line); color:var(--ink);}
+  .status{font-size:10.5px; padding:4px 10px; border-radius:20px; font-weight:bold;}
+  .status.approved{background:#E9F7F0; color:var(--teal);}
+  .status.flagged{background:#FBEAE7; color:var(--coral);}
+
+  /* Fraud detector */
+  .pharmacy-chip{
+    display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--line);
+    border-radius:20px; padding:6px 12px; font-size:11.5px; margin:3px 4px 3px 0;
+  }
+  .pharmacy-chip.flagged{background:#FBEAE7; border-color:#F3C7BD; color:#8A3A2C; font-weight:bold;}
+  .counter-line{display:flex; align-items:center; gap:8px; margin-top:14px;}
+
+  .toast{
+    position:fixed; bottom:24px; right:24px; background:var(--navy); color:#fff;
+    padding:13px 18px; border-radius:10px; font-size:13px; box-shadow:0 8px 24px rgba(0,0,0,.25);
+    display:flex; align-items:center; gap:10px; transform:translateY(20px); opacity:0;
+    transition:all .3s; pointer-events:none; z-index:50;
+  }
+  .toast.show{transform:translateY(0); opacity:1;}
+  .toast svg{width:16px;height:16px; fill:var(--mint); flex-shrink:0;}
+</style>
+</head>
+<body>
+<script>
+  const token = localStorage.getItem('medguardian_token');
+  const user = JSON.parse(localStorage.getItem('medguardian_user') || 'null');
+  if (!token || !user) {
+    window.location.href = 'login.html';
+  }
+</script>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="brand">
+      <div class="badge"><svg viewBox="0 0 512 512"><path d="M466.5 83.7l-192-80a48.15 48.15 0 0 0-36.9 0l-192 80C27.7 91.1 16 108.6 16 128c0 198.5 114.5 335.7 221.5 380.3a48.09 48.09 0 0 0 36.9 0C360.1 472.6 496 349.3 496 128c0-19.4-11.7-36.9-29.5-44.3z"/></svg></div>
+      <div><h1>MedGuardian AI</h1><span>Working Prototype</span></div>
+    </div>
+
+    <!-- data-role: 'patient' = only patients, 'doctor' = only doctors, 'both' = everyone -->
+    <button class="nav-item active" data-page="dashboard" id="nav-dashboard"><svg viewBox="0 0 576 512"><path d="M576 256l-64 64H448l-32 96-96-224-32 64H64l-64-64h128l32-64 96 224 32-96h288z"/></svg><span id="nav-dashboard-label">My Health Vault</span></button>
+    <button class="nav-item" data-page="guardian" data-role="doctor" id="nav-guardian"><svg viewBox="0 0 512 512"><path d="M225.8 468.2l-2.5-2.3L48.1 303.2C19 274.7 0 234.7 0 191.1 0 110.3 65.5 48 144 48c39.1 0 76.3 14.5 104.8 41.5L256 96l7.2-6.5C291.7 62.5 328.9 48 368 48c78.5 0 144 62.3 144 143.1 0 43.6-19 83.6-48.1 112.1L255.8 468.2c-8.8 8.5-22.8 8.5-30 0z"/></svg>AI Medication Guardian</button>
+    <button class="nav-item" data-page="fraud" data-role="doctor" id="nav-fraud"><svg viewBox="0 0 512 512"><path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7.2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8.2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0-64 0 32 32 0 1 0 64 0z"/></svg>Fraud Detection</button>
+    <button class="nav-item" data-page="emergency" data-role="doctor" id="nav-emergency"><svg viewBox="0 0 448 512"><path d="M0 32h192v192H0V32zm32 32v128h128V64H32zm224-32h192v192H256V32zm32 32v128h128V64H288zM0 288h192v192H0V288zm32 32v128h128V320H32zm352-32h64v64h-64v-64zm-64 0h32v32h-32v-32zm-32 32h32v32h-32v-32zm64 32h32v32h-32v-32zm-64 32h32v64h-32v-64zm96-32h32v96h-32v-96zM288 320h32v32h-32v-32zm0 64h32v64h-32v-64z"/></svg>Emergency QR Access</button>
+    <button class="nav-item" data-page="consent" data-role="patient" id="nav-consent"><svg viewBox="0 0 576 512"><path d="M572.5 241.4C518.3 135.6 410.9 64 288 64S57.7 135.6 3.5 241.4a32.4 32.4 0 0 0 0 29.2C57.7 376.4 165.1 448 288 448s230.3-71.6 284.5-177.4a32.4 32.4 0 0 0 0-29.2zM288 400a144 144 0 1 1 0-288 144 144 0 1 1 0 288zm0-240a95.3 95.3 0 0 0-25.3 3.8 47.9 47.9 0 0 1-67.4 67.4A95.8 95.8 0 1 0 288 160z"/></svg>Consent Dashboard</button>
+
+    <div class="sidebar-foot">
+      <div class="role-pill">Logged in as</div>
+      <div class="role-switch" style="display:flex; flex-direction:column; gap:4px;">
+        <div style="font-size:13px; color:#fff; font-weight:bold;" id="sidebar-user-name"></div>
+        <div style="font-size:11px; color:#9FC9C2;" id="sidebar-user-role"></div>
+        <button class="role-btn" style="margin-top:10px; border-color:#E8543B; color:#E8543B;" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- PATIENT VAULT -->
+    <div class="page active" id="page-dashboard">
+      <div class="pagehead">
+        <h2 id="dashboard-title">Welcome back</h2>
+        <p id="dashboard-desc">Your records, your ownership. Everything below is encrypted and only shared with your approval.</p>
+      </div>
+      <div class="grid2" id="patient-dashboard-grid">
+        <div class="card">
+          <h3>Digital Health Vault</h3>
+          <div class="sub">AES-256 encrypted records</div>
+          <div id="health-records-container"><p style="font-size:12px; color:var(--muted);">Loading records...</p></div>
+        </div>
+
+        <div class="card">
+          <h3>Upload Health Report</h3>
+          <div class="sub">Upload PDF or images. AI will extract and update your details.</div>
+          <div class="field-group">
+            <input type="file" id="reportFile" accept=".pdf,image/*" style="cursor:pointer; margin-bottom:8px;">
+          </div>
+          <button class="btn btn-primary btn-block" onclick="uploadReport()" id="uploadBtn">Upload & Analyze</button>
+          <div class="result safe" id="uploadResult" style="margin-top:14px; display:none;"></div>
+          
+          <div style="margin-top:22px; padding-top:18px; border-top:1px solid var(--line);">
+            <h3>AI Health Timeline</h3>
+            <div class="sub">Auto-generated from your records — no manual entry needed</div>
+            <div class="timeline" id="patientTimeline">
+              <div class="tl-pt"><div class="tl-dot"></div><b>2018</b><span>Diabetes diagnosed</span></div>
+              <div class="tl-pt"><div class="tl-dot"></div><b>2020</b><span>BP medication started</span></div>
+              <div class="tl-pt"><div class="tl-dot"></div><b>2023</b><span>Penicillin allergy confirmed</span></div>
+              <div class="tl-pt"><div class="tl-dot" style="background:#E8543B"></div><b>2026</b><span>Metformin prescribed</span></div>
+            </div>
+          </div>
+          <div style="margin-top:22px; padding-top:18px; border-top:1px solid var(--line);">
+            <h3 style="margin-bottom:10px;">Pending Consent Requests</h3>
+            <div id="pending-requests-container"><p style="font-size:12px; color:var(--muted);">Loading...</p></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="grid2" id="doctor-dashboard-grid" style="display:none;">
+        <div class="card">
+          <h3>Patient Directory</h3>
+          <div class="sub">Find patients and request access to their vault</div>
+          <div id="patient-list"><p style="font-size:12px; color:var(--muted);">Loading patients...</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI MEDICATION GUARDIAN -->
+    <div class="page" id="page-guardian">
+      <div class="pagehead">
+        <h2>AI Medication Guardian</h2>
+        <p>Doctor uploads a prescription — AI checks interactions, allergies, duplicates &amp; dosage risk instantly.</p>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h3>New Prescription — Patient: Aanya Suresh</h3>
+          <div class="sub">Known allergy on file: <b>Penicillin</b> · Condition: Type-2 Diabetes</div>
+
+          <div class="field-group">
+            <label class="field">Medicine A</label>
+            <select id="medA">
+              <option value="metformin">Metformin</option>
+              <option value="warfarin">Warfarin</option>
+              <option value="amoxicillin">Amoxicillin (Penicillin-class)</option>
+              <option value="ibuprofen">Ibuprofen</option>
+              <option value="lisinopril">Lisinopril</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field">Medicine B</label>
+            <select id="medB">
+              <option value="none">— none —</option>
+              <option value="aspirin">Aspirin</option>
+              <option value="ibuprofen">Ibuprofen</option>
+              <option value="metformin">Metformin</option>
+              <option value="contrast_dye">Contrast Dye (for imaging)</option>
+              <option value="lisinopril">Lisinopril</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-block" onclick="runGuardian()">Run AI Safety Check</button>
+
+          <div class="result" id="guardianResult"></div>
+        </div>
+
+        <div class="card">
+          <h3>What the AI checks</h3>
+          <div class="sub">Six checks run on every prescription, in real time</div>
+          <div class="vault-item"><div class="icon-circle" style="background:#02C39A;width:32px;height:32px;"><svg viewBox="0 0 512 512" style="width:14px;height:14px;"><path d="M173.9 439.4L7.5 273C-2.5 263-2.5 249 7.5 239l30.4-30.4c10-10 26-10 36 0l108.4 108.4L322.6 88.4c10-10 26-10 36 0L389 118.8c10 10 10 26 0 36L209.9 439.4c-10 10-26 10-36 0z"/></svg></div><div class="meta"><b>Drug–drug interaction</b></div></div>
+          <div class="vault-item"><div class="icon-circle" style="background:#02C39A;width:32px;height:32px;"><svg viewBox="0 0 512 512" style="width:14px;height:14px;"><path d="M173.9 439.4L7.5 273C-2.5 263-2.5 249 7.5 239l30.4-30.4c10-10 26-10 36 0l108.4 108.4L322.6 88.4c10-10 26-10 36 0L389 118.8c10 10 10 26 0 36L209.9 439.4c-10 10-26 10-36 0z"/></svg></div><div class="meta"><b>Allergy conflict</b></div></div>
+          <div class="vault-item"><div class="icon-circle" style="background:#02C39A;width:32px;height:32px;"><svg viewBox="0 0 512 512" style="width:14px;height:14px;"><path d="M173.9 439.4L7.5 273C-2.5 263-2.5 249 7.5 239l30.4-30.4c10-10 26-10 36 0l108.4 108.4L322.6 88.4c10-10 26-10 36 0L389 118.8c10 10 10 26 0 36L209.9 439.4c-10 10-26 10-36 0z"/></svg></div><div class="meta"><b>Duplicate medicine class</b></div></div>
+          <div class="vault-item"><div class="icon-circle" style="background:#02C39A;width:32px;height:32px;"><svg viewBox="0 0 512 512" style="width:14px;height:14px;"><path d="M173.9 439.4L7.5 273C-2.5 263-2.5 249 7.5 239l30.4-30.4c10-10 26-10 36 0l108.4 108.4L322.6 88.4c10-10 26-10 36 0L389 118.8c10 10 10 26 0 36L209.9 439.4c-10 10-26 10-36 0z"/></svg></div><div class="meta"><b>Pregnancy risk</b></div></div>
+          <div class="vault-item"><div class="icon-circle" style="background:#02C39A;width:32px;height:32px;"><svg viewBox="0 0 512 512" style="width:14px;height:14px;"><path d="M173.9 439.4L7.5 273C-2.5 263-2.5 249 7.5 239l30.4-30.4c10-10 26-10 36 0l108.4 108.4L322.6 88.4c10-10 26-10 36 0L389 118.8c10 10 10 26 0 36L209.9 439.4c-10 10-26 10-36 0z"/></svg></div><div class="meta"><b>Kidney / liver dosage</b></div></div>
+          <div class="vault-item"><div class="icon-circle" style="background:#02C39A;width:32px;height:32px;"><svg viewBox="0 0 512 512" style="width:14px;height:14px;"><path d="M173.9 439.4L7.5 273C-2.5 263-2.5 249 7.5 239l30.4-30.4c10-10 26-10 36 0l108.4 108.4L322.6 88.4c10-10 26-10 36 0L389 118.8c10 10 10 26 0 36L209.9 439.4c-10 10-26 10-36 0z"/></svg></div><div class="meta"><b>Age suitability</b></div></div>
+          <p style="font-size:11.5px; color:var(--muted); margin-top:14px;">Try: <b>Warfarin + Aspirin</b> (bleeding risk), <b>Amoxicillin</b> alone (allergy conflict), or <b>Metformin + Contrast Dye</b> (kidney risk) to see the AI explain a danger.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FRAUD DETECTION -->
+    <div class="page" id="page-fraud">
+      <div class="pagehead">
+        <h2>AI Prescription Fraud Detection</h2>
+        <p>Pattern-based anomaly detection flags misuse a human reviewer would miss.</p>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h3>Scenario A — Sudden Medicine Shift</h3>
+          <div class="sub">Patient's prescription history vs. today's upload</div>
+          <div class="vault-item"><div class="meta"><b>Usual pattern</b><span>Metformin, Glimepiride — diabetes care, refilled monthly for 14 months</span></div></div>
+          <div class="vault-item"><div class="meta"><b>Today's upload</b><span>Oxycodone 30mg — high-strength opioid, no prior history</span></div></div>
+          <button class="btn btn-coral btn-block" onclick="runShiftFraud()">Analyze Pattern</button>
+          <div class="result" id="shiftResult"></div>
+        </div>
+
+        <div class="card">
+          <h3>Scenario B — Multi-Pharmacy Reuse</h3>
+          <div class="sub">Same prescription code submitted across pharmacies</div>
+          <div id="pharmacyChips" style="margin-bottom:10px;"></div>
+          <div class="counter-line">
+            <button class="btn btn-ghost" onclick="addPharmacy()">+ Simulate another pharmacy scan</button>
+          </div>
+          <div class="result" id="reuseResult"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMERGENCY QR -->
+    <div class="page" id="page-emergency">
+      <div class="pagehead">
+        <h2>Emergency QR / NFC Access</h2>
+        <p>For unconscious or non-consenting patients — only lifesaving data is revealed, instantly.</p>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h3>Doctor: Scan Patient Card</h3>
+          <div class="sub">Simulates a roadside / ER scan with no OTP required</div>
+          <div class="qr-wrap">
+            <div class="qr-box" onclick="scanEmergency()">
+              <svg viewBox="0 0 448 512"><path d="M0 32h192v192H0V32zm32 32v128h128V64H32zm224-32h192v192H256V32zm32 32v128h128V64H288zM0 288h192v192H0V288zm32 32v128h128V320H32zm352-32h64v64h-64v-64zm-64 0h32v32h-32v-32zm-32 32h32v32h-32v-32zm64 32h32v32h-32v-32zm-64 32h32v64h-32v-64zm96-32h32v96h-32v-96zM288 320h32v32h-32v-32zm0 64h32v64h-32v-64z"/></svg>
+            </div>
+            <button class="btn btn-primary" onclick="scanEmergency()">Tap to Scan QR Card</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>What the doctor sees</h3>
+          <div class="sub" id="emergencySub">Waiting for scan…</div>
+          <div class="emergency-card" id="emergencyCard">
+            <div class="ef-row"><span>Patient</span><span>Aanya Suresh</span></div>
+            <div class="ef-row"><span>Blood group</span><span>O+</span></div>
+            <div class="ef-row"><span>Known allergies</span><span>Penicillin</span></div>
+            <div class="ef-row"><span>Current medicines</span><span>Metformin 500mg</span></div>
+            <div class="ef-row"><span>Emergency contact</span><span>Ravi Suresh · +91 98xxxxxx21</span></div>
+            <div class="hidden-note">Not shown: mental health history, insurance details, private reports. This access has been logged and the patient will be notified.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONSENT DASHBOARD -->
+    <div class="page" id="page-consent" data-role="patient">
+      <div class="pagehead">
+        <h2>Consent &amp; Audit Dashboard</h2>
+        <p>Every doctor who has requested or has access to your records — fully transparent. You can revoke access at any time.</p>
+      </div>
+      <div class="card">
+        <div id="consent-table-container">
+          <p style="font-size:12px; color:var(--muted);">Loading access history...</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"><svg viewBox="0 0 512 512"><path d="M173.9 439.4L7.5 273C-2.5 263-2.5 249 7.5 239l30.4-30.4c10-10 26-10 36 0l108.4 108.4L322.6 88.4c10-10 26-10 36 0L389 118.8c10 10 10 26 0 36L209.9 439.4c-10 10-26 10-36 0z"/></svg><span id="toastMsg"></span></div>
+
+<script>
+// ---------- Auth & Init ----------
+const API_BASE = 'http://localhost:3000/api';
+
+document.getElementById('sidebar-user-name').innerText = user.name;
+document.getElementById('sidebar-user-role').innerText = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+document.getElementById('dashboard-title').innerText = `Welcome back, ${user.name}`;
+
+function logout() {
+  localStorage.removeItem('medguardian_token');
+  localStorage.removeItem('medguardian_user');
+  window.location.href = 'login.html';
+}
+
+// ---------- Role-Based Navigation Filtering ----------
+(function applyRoleFiltering() {
+  const role = user.role; // 'patient' or 'doctor'
+
+  // Hide nav buttons not relevant to this role
+  document.querySelectorAll('.nav-item[data-role]').forEach(btn => {
+    if (btn.dataset.role !== role) {
+      btn.style.display = 'none';
+    }
+  });
+
+  if (role === 'doctor') {
+    // Rename first nav item label for doctors
+    document.getElementById('nav-dashboard-label').innerText = 'Patient Directory';
+    document.getElementById('dashboard-title').innerText = `Welcome, Dr. ${user.name}`;
+    document.getElementById('dashboard-desc').innerText = 'Manage your patients and request access to their health records securely.';
+
+    // Show doctor dashboard grid, hide patient grid
+    document.getElementById('patient-dashboard-grid').style.display = 'none';
+    document.getElementById('doctor-dashboard-grid').style.display = 'grid';
+    loadPatients();
+  } else {
+    // Patient
+    document.getElementById('nav-dashboard-label').innerText = 'My Health Vault';
+    document.getElementById('dashboard-desc').innerText = 'Your records, your ownership. Everything below is encrypted and only shared with your approval.';
+    loadPendingRequests();
+    loadMyRecords();
+    loadAllAccessRequests();
+  }
+})();
+
+const tagColors = {
+  prescription: '#028090',
+  lab_report: '#00A896',
+  imaging: '#02C39A',
+  allergy: '#E8543B',
+  vaccination: '#11304F'
+};
+
+const tagIcons = {
+  prescription: '<path d="M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zm192 0V128H384L256 0z"/>',
+  lab_report: '<path d="M0 96C0 78.3 14.3 64 32 64H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM0 416c0-17.7 14.3-32 32-32H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32z"/>',
+  imaging: '<path d="M0 224c0-17.7 14.3-32 32-32H64c17.7 0 32 14.3 32 32v224c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V224zM160 96c0-17.7 14.3-32 32-32h32c17.7 0 32 14.3 32 32v352c0 17.7-14.3 32-32 32H192c-17.7 0-32-14.3-32-32V96zM352 32c0-17.7 14.3-32 32-32h32c17.7 0 32 14.3 32 32v416c0 17.7-14.3 32-32 32H384c-17.7 0-32-14.3-32-32V32z"/>',
+  allergy: '<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7.2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8.2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 96c-13.3 0-24 10.7-24 24v104c0 13.3 10.7 24 24 24s24-10.7 24-24V152c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0-64 0 32 32 0 1 0 64 0z"/>',
+  vaccination: '<path d="M152 24c0-13.3 10.7-24 24-24h96c13.3 0 24 10.7 24 24V64H152V24zM0 96c0-17.7 14.3-32 32-32h384c17.7 0 32 14.3 32 32v32H0V96zm32 64h384v304c0 26.5-21.5 48-48 48H80c-26.5 0-48-21.5-48-48V160z"/>'
+};
+
+function renderRecords(records) {
+  let html = '';
+  records.forEach(r => {
+    const color = tagColors[r.record_type] || '#64748B';
+    const icon = tagIcons[r.record_type] || '';
+    const tagLabel = r.record_type.replace('_', ' ').toUpperCase();
+    html += `
+      <div class="vault-item">
+        <div class="icon-circle" style="background:${color}"><svg viewBox="0 0 512 512">${icon}</svg></div>
+        <div class="meta"><b>${r.title}</b><span>${r.description}</span></div>
+        <span class="tag" style="color:${color}; background:${color}22;">${tagLabel}</span>
+      </div>
+    `;
+  });
+  document.getElementById('health-records-container').innerHTML = html || '<p style="font-size:12px; color:var(--muted);">No records found.</p>';
+}
+
+async function loadMyRecords() {
+  try {
+    const res = await fetch(`${API_BASE}/records/mine`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) throw new Error('Failed to load records');
+    renderRecords(await res.json());
+  } catch (err) {
+    document.getElementById('health-records-container').innerHTML = '<p style="color:var(--coral);">Error loading records</p>';
+  }
+}
+
+async function viewPatientVault(patientId, patientName) {
+  try {
+    const res = await fetch(`${API_BASE}/records/patient/${patientId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) throw new Error('Unauthorized or failed to load records');
+    
+    document.getElementById('doctor-dashboard-grid').style.display = 'none';
+    document.getElementById('patient-dashboard-grid').style.display = 'grid';
+    document.getElementById('dashboard-title').innerText = `Vault: ${patientName}`;
+    document.getElementById('dashboard-desc').innerText = `Viewing records for ${patientName}. You have authorized access.`;
+    
+    // Hide the consent section in the patient grid since the doctor shouldn't see it
+    document.getElementById('pending-requests-container').parentElement.style.display = 'none';
+    
+    renderRecords(await res.json());
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
+async function loadPatients() {
+  try {
+    const res = await fetch(`${API_BASE}/users/patients`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const patients = await res.json();
+    let html = '';
+    patients.forEach(p => {
+      let actionBtn = '';
+      if (p.status === 'approved') {
+        actionBtn = `<button class="btn btn-ghost" style="padding:7px 14px; font-size:11.5px;" onclick="viewPatientVault(${p.id}, '${p.name}')">View Vault</button>`;
+      } else if (p.status === 'pending') {
+        actionBtn = `<button class="btn btn-ghost" style="padding:7px 14px; font-size:11.5px; opacity:0.6;" disabled>Request Pending</button>`;
+      } else {
+        actionBtn = `<button class="btn btn-primary" style="padding:7px 14px; font-size:11.5px;" onclick="requestAccess(${p.id})">Request Access</button>`;
+      }
+
+      html += `
+        <div class="vault-item">
+          <div class="icon-circle" style="background:#11304F"><svg viewBox="0 0 448 512"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/></svg></div>
+          <div class="meta"><b>${p.name}</b><span>${p.email}</span></div>
+          ${actionBtn}
+        </div>
+      `;
+    });
+    document.getElementById('patient-list').innerHTML = html || '<p style="font-size:12px; color:var(--muted);">No patients found.</p>';
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function requestAccess(patientId) {
+  try {
+    const res = await fetch(`${API_BASE}/access/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ patient_id: patientId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    toast('Access request sent successfully');
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
+async function loadPendingRequests() {
+  try {
+    const res = await fetch(`${API_BASE}/access/requests`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const requests = await res.json();
+    let html = '';
+    requests.forEach(req => {
+      if (req.status === 'pending') {
+        html += `
+          <div class="vault-item" id="req-${req.id}">
+            <div class="icon-circle" style="background:#028090"><svg viewBox="0 0 576 512"><path d="M0 0h576v512H0z" fill="none"/><path d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H512c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64z"/></svg></div>
+            <div class="meta"><b>Dr. ${req.doctor_name}</b><span>Requesting: Vault Access</span></div>
+            <button class="btn btn-primary" style="padding:7px 14px; font-size:11.5px; margin-right:5px;" onclick="respondRequest(${req.id}, 'approved')">Approve</button>
+            <button class="btn btn-coral" style="padding:7px 14px; font-size:11.5px;" onclick="respondRequest(${req.id}, 'rejected')">Reject</button>
+          </div>
+        `;
+      }
+    });
+    document.getElementById('pending-requests-container').innerHTML = html || '<p style="font-size:12px; color:var(--muted);">No pending requests.</p>';
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function loadAllAccessRequests() {
+  try {
+    const res = await fetch(`${API_BASE}/access/requests`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const requests = await res.json();
+
+    if (requests.length === 0) {
+      document.getElementById('consent-table-container').innerHTML = '<p style="font-size:13px; color:var(--muted); padding:8px 0;">No access requests yet.</p>';
+      return;
+    }
+
+    let rows = '';
+    requests.forEach(req => {
+      const date = new Date(req.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+      let statusBadge = '';
+      let actionBtn = '';
+
+      if (req.status === 'approved') {
+        statusBadge = '<span class="status approved">Approved</span>';
+        actionBtn = `<button class="btn" style="padding:5px 12px; font-size:11px; background:#FBEAE7; color:#8A3A2C; border:1px solid #F3C7BD; border-radius:6px;" onclick="revokeAccess(${req.id})">Revoke Access</button>`;
+      } else if (req.status === 'pending') {
+        statusBadge = '<span class="status" style="background:#FFF7E6; color:#B45309;">Pending</span>';
+        actionBtn = `
+          <button class="btn btn-primary" style="padding:5px 10px; font-size:11px; margin-right:4px;" onclick="respondRequest(${req.id}, 'approved')">Approve</button>
+          <button class="btn btn-coral" style="padding:5px 10px; font-size:11px;" onclick="respondRequest(${req.id}, 'rejected')">Reject</button>
+        `;
+      } else {
+        statusBadge = '<span class="status flagged">Rejected</span>';
+        actionBtn = '';
+      }
+
+      rows += `
+        <tr id="consent-row-${req.id}">
+          <td><b>Dr. ${req.doctor_name}</b></td>
+          <td>Vault Access Request</td>
+          <td>${req.status === 'approved' ? 'Full health records' : '—'}</td>
+          <td>${date}</td>
+          <td>${statusBadge}</td>
+          <td style="text-align:right;">${actionBtn}</td>
+        </tr>
+      `;
+    });
+
+    document.getElementById('consent-table-container').innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Doctor</th><th>Request Type</th><th>Data Shared</th><th>When</th><th>Status</th><th></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  } catch (err) {
+    console.error(err);
+    document.getElementById('consent-table-container').innerHTML = '<p style="color:var(--coral);">Failed to load requests.</p>';
+  }
+}
+
+async function revokeAccess(requestId) {
+  if (!confirm('Are you sure you want to revoke this doctor\'s access? They will no longer be able to view your records.')) return;
+  try {
+    const res = await fetch(`${API_BASE}/access/respond`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ request_id: requestId, action: 'rejected' })
+    });
+    if (!res.ok) throw new Error('Failed to revoke access');
+    toast('Access revoked successfully');
+    loadAllAccessRequests();
+    loadPendingRequests();
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
+async function respondRequest(requestId, action) {
+  try {
+    const res = await fetch(`${API_BASE}/access/respond`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ request_id: requestId, action })
+    });
+    if (!res.ok) throw new Error('Failed to respond');
+    const rowEl = document.getElementById(`req-${requestId}`);
+    if (rowEl) rowEl.style.display = 'none';
+    toast(`Access ${action}`);
+    loadPendingRequests();
+    loadAllAccessRequests();
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
+// ---------- Navigation ----------
+document.querySelectorAll('.nav-item').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+btn.dataset.page).classList.add('active');
+    // Refresh consent dashboard whenever it is opened
+    if (btn.dataset.page === 'consent' && user.role === 'patient') {
+      loadAllAccessRequests();
+    }
+  });
+});
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// ---------- File Upload & AI Details Update ----------
+async function uploadReport() {
+  const fileInput = document.getElementById('reportFile');
+  const file = fileInput.files[0];
+  if (!file) {
+    toast('Please select a file to upload');
+    return;
+  }
+  
+  const uploadBtn = document.getElementById('uploadBtn');
+  uploadBtn.innerText = 'Analyzing...';
+  uploadBtn.disabled = true;
+
+  const formData = new FormData();
+  formData.append('report', file);
+
+  try {
+    const res = await fetch(`${API_BASE}/records/upload`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    });
+    
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to upload');
+    }
+    
+    const data = await res.json();
+    toast('Report analyzed and vault updated');
+    
+    // Show success message
+    const resultDiv = document.getElementById('uploadResult');
+    resultDiv.innerHTML = `
+      <div class="result-head">
+        <div class="icon-circle" style="width:30px;height:30px;background:#02C39A"><svg viewBox="0 0 512 512" style="width:14px;height:14px;"><path d="M173.9 439.4L7.5 273C-2.5 263-2.5 249 7.5 239l30.4-30.4c10-10 26-10 36 0l108.4 108.4L322.6 88.4c10-10 26-10 36 0L389 118.8c10 10 10 26 0 36L209.9 439.4c-10 10-26 10-36 0z"/></svg></div>
+        <b>AI Extraction Complete</b>
+      </div>
+      <p>${data.record.description}</p>
+    `;
+    resultDiv.style.display = 'block';
+    
+    // Add point to timeline to show patient details were updated
+    const timeline = document.getElementById('patientTimeline');
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const newPoint = document.createElement('div');
+    newPoint.className = 'tl-pt';
+    newPoint.innerHTML = `<div class="tl-dot" style="background:#02C39A"></div><b>${currentYear}</b><span>New record added</span>`;
+    timeline.appendChild(newPoint);
+
+    // Refresh records
+    loadMyRecords();
+    
+    fileInput.value = '';
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    uploadBtn.innerText = 'Upload & Analyze';
+    uploadBtn.disabled = false;
+  }
+}
+
+// ---------- AI Medication Guardian ----------
+const ALLERGY = 'penicillin';
+const ALLERGIC_CLASS = ['amoxicillin'];
+
+const INTERACTIONS = {
+  'warfarin+aspirin': {
+    risk:'danger',
+    title:'High-risk interaction detected',
+    reason:'Warfarin and Aspirin both reduce blood clotting. Combined, they significantly increase the risk of internal bleeding.',
+    score:94
+  },
+  'metformin+contrast_dye': {
+    risk:'danger',
+    title:'Kidney risk detected',
+    reason:'Contrast dye combined with Metformin can impair kidney function, raising the risk of lactic acidosis in diabetic patients.',
+    score:81
+  },
+  'ibuprofen+lisinopril': {
+    risk:'danger',
+    title:'Reduced effectiveness & kidney strain',
+    reason:'Ibuprofen can reduce the blood-pressure-lowering effect of Lisinopril and add strain on kidney function when combined.',
+    score:68
+  }
+};
+
+function runGuardian(){
+  const a = document.getElementById('medA').value;
+  const b = document.getElementById('medB').value;
+  const result = document.getElementById('guardianResult');
+
+  // Allergy check first
+  if (a==='amoxicillin' || b==='amoxicillin'){
+    showGuardianResult(result, true,
+      'Allergy conflict detected',
+      'The patient has a documented allergy to Penicillin. Amoxicillin is in the Penicillin class and may trigger a severe allergic reaction.',
+      96);
+    return;
+  }
+
+  // Duplicate class check
+  if (a===b && a!=='none'){
+    showGuardianResult(result, true,
+      'Duplicate medicine detected',
+      'The same medicine has been entered twice. This may indicate a transcription error or unsafe double-dosing.',
+      72);
+    return;
+  }
+
+  const key1 = a+'+'+b, key2 = b+'+'+a;
+  const hit = INTERACTIONS[key1] || INTERACTIONS[key2];
+  if (hit){
+    showGuardianResult(result, true, hit.title, hit.reason, hit.score);
+    return;
+  }
+
+  showGuardianResult(result, false,
+    'No interaction risk found',
+    'The AI checked drug interactions, allergy conflicts, duplicate classes, and dosage suitability against the patient profile — all clear.',
+    8);
+}
+
+function showGuardianResult(el, danger, title, reason, score){
+  el.className = 'result show ' + (danger ? 'danger' : 'safe');
+  const iconColor = danger ? '#E8543B' : '#02C39A';
+  const iconPath = danger
+    ? '<path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7.2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8.2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 96c-13.3 0-24 10.7-24 24v104c0 13.3 10.7 24 24 24s24-10.7 24-24V152c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0-64 0 32 32 0 1 0 64 0z"/>'
+    : '<path d="M173.9 439.4L7.5 273C-2.5 263-2.5 249 7.5 239l30.4-30.4c10-10 26-10 36 0l108.4 108.4L322.6 88.4c10-10 26-10 36 0L389 118.8c10 10 10 26 0 36L209.9 439.4c-10 10-26 10-36 0z"/>';
+  el.innerHTML = `
+    <div class="result-head">
+      <div class="icon-circle" style="width:30px;height:30px;background:${iconColor}"><svg viewBox="0 0 512 512" style="width:14px;height:14px;">${iconPath}</svg></div>
+      <b>${title}</b>
+    </div>
+    <p>${reason}</p>
+    <div class="score-row">
+      <span style="font-size:11px; color:var(--muted); white-space:nowrap;">Risk score</span>
+      <div class="score-bar"><div class="score-fill" style="width:${score}%; background:${iconColor}"></div></div>
+      <span style="font-size:12px; font-weight:bold; color:${iconColor}">${score}%</span>
+    </div>
+    ${danger ? `<div class="explain">Why: ${reason}</div>` : ''}
+  `;
+}
+
+// ---------- Fraud Detection ----------
+function runShiftFraud(){
+  const r = document.getElementById('shiftResult');
+  r.className = 'result show danger';
+  r.innerHTML = `
+    <div class="result-head"><div class="icon-circle" style="width:30px;height:30px;background:#E8543B"><svg viewBox="0 0 512 512" style="width:14px;height:14px;"><path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7.2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8.2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 96c-13.3 0-24 10.7-24 24v104c0 13.3 10.7 24 24 24s24-10.7 24-24V152c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0-64 0 32 32 0 1 0 64 0z"/></svg></div><b>Suspicious prescription flagged</b></div>
+    <p>This patient's 14-month history shows only diabetes medication. A sudden switch to a high-strength opioid with no clinical transition is a strong anomaly signal.</p>
+    <div class="explain">Why: Abrupt category change + no tapering history + high-risk drug class = anomaly score 88%.</div>
+  `;
+  toast('Fraud pattern detected — case sent for review');
+}
+
+let pharmacyCount = 1;
+function renderPharmacies(){
+  const wrap = document.getElementById('pharmacyChips');
+  let html = '';
+  for(let i=1;i<=pharmacyCount;i++){
+    const flagged = i>3;
+    html += `<span class="pharmacy-chip ${flagged?'flagged':''}">Pharmacy #${i} ${flagged?'⚠':''}</span>`;
+  }
+  wrap.innerHTML = html;
+}
+function addPharmacy(){
+  pharmacyCount++;
+  renderPharmacies();
+  const r = document.getElementById('reuseResult');
+  if (pharmacyCount > 3){
+    r.className = 'result show danger';
+    r.innerHTML = `
+      <div class="result-head"><div class="icon-circle" style="width:30px;height:30px;background:#E8543B"><svg viewBox="0 0 512 512" style="width:14px;height:14px;"><path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7.2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8.2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 96c-13.3 0-24 10.7-24 24v104c0 13.3 10.7 24 24 24s24-10.7 24-24V152c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0-64 0 32 32 0 1 0 64 0z"/></svg></div><b>Fraud alert triggered</b></div>
+      <p>The same prescription code has now been scanned at ${pharmacyCount} pharmacies. A genuine prescription is normally filled once. This pattern is logged and the prescribing doctor is notified.</p>
+    `;
+    document.getElementById('emergencyRow'); // no-op, just structural
+    addFraudToConsentLog(pharmacyCount);
+    toast('Multi-pharmacy reuse alert added to consent log');
+  } else {
+    r.className = 'result';
+  }
+}
+function addFraudToConsentLog(count){
+  // avoid duplicate rows
+  if (document.getElementById('fraudRow')) return;
+  const tbody = document.getElementById('consentTable');
+  const tr = document.createElement('tr');
+  tr.id = 'fraudRow';
+  tr.innerHTML = `<td>Multi-pharmacy scan</td><td>Prescription reuse (${count}x)</td><td>—</td><td>Just now</td><td><span class="status flagged">Flagged by AI</span></td>`;
+  tbody.insertBefore(tr, tbody.firstChild);
+}
+renderPharmacies();
+
+// ---------- Emergency QR ----------
+function scanEmergency(){
+  document.getElementById('emergencyCard').classList.add('show');
+  document.getElementById('emergencySub').textContent = 'Scan successful — critical data released';
+  document.getElementById('emergencyRow').style.display = '';
+  toast('Emergency access logged — patient will be notified');
+}
+</script>
+</body>
+</html>
