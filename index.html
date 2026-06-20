@@ -558,6 +558,7 @@ async function requestAccess(patientId) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     toast('Access request sent successfully');
+    loadPatients();
   } catch (err) {
     toast(err.message);
   }

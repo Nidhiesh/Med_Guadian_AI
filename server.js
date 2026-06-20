@@ -133,14 +133,13 @@ app.post('/api/access/request', authenticate, async (req, res) => {
     try {
         const { patient_id } = req.body;
         await pool.query(
-            'INSERT INTO access_requests (doctor_id, patient_id, status) VALUES (?, ?, "pending")',
+            `INSERT INTO access_requests (doctor_id, patient_id, status, created_at) 
+             VALUES (?, ?, "pending", CURRENT_TIMESTAMP) 
+             ON DUPLICATE KEY UPDATE status = "pending", created_at = CURRENT_TIMESTAMP`,
             [req.user.id, patient_id]
         );
         res.status(201).json({ message: 'Request sent successfully' });
     } catch (err) {
-        if (err.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({ error: 'Request already exists' });
-        }
         console.error(err);
         res.status(500).json({ error: 'Server error' });
     }
