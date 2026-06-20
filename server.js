@@ -54,6 +54,86 @@ const authenticate = (req, res, next) => {
     });
 };
 
+// Helper to send real SMS (using Fast2SMS or Twilio) or fallback to simulated log
+async function sendSMS(phone, message) {
+    // 1. Try Fast2SMS if API key is provided
+    if (process.env.FAST2SMS_API_KEY) {
+        try {
+            console.log(`[Fast2SMS] Attempting to send SMS to ${phone}...`);
+            // Fast2SMS expects 10-digit numbers, so clean any spaces/dashes/prefixes
+            const cleanedPhone = phone.replace(/\D/g, '').slice(-10);
+            
+            const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+                method: 'POST',
+                headers: {
+                    'authorization': process.env.FAST2SMS_API_KEY,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    route: 'q',
+                    message: message,
+                    language: 'english',
+                    flash: 0,
+                    numbers: cleanedPhone
+                })
+            });
+            const data = await response.json();
+            if (response.ok && data.return === true) {
+                console.log(`[Fast2SMS] SMS successfully sent to ${phone}: ${data.message}`);
+                return { success: true, provider: 'fast2sms' };
+            } else {
+                console.error(`[Fast2SMS] API responded with error:`, data);
+            }
+        } catch (err) {
+            console.error('[Fast2SMS] Error sending SMS:', err.message);
+        }
+    }
+    
+    // 2. Try Twilio if SID, TOKEN, and FROM are provided
+    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM_NUMBER) {
+        try {
+            console.log(`[Twilio] Attempting to send SMS to ${phone}...`);
+            // Ensure phone number has country code (Twilio requires E.164, e.g., +919876543210)
+            let formattedPhone = phone.trim().replace(/[\s-()]/g, '');
+            if (!formattedPhone.startsWith('+')) {
+                // If it is 10 digits, default to India (+91)
+                if (formattedPhone.length === 10) {
+                    formattedPhone = '+91' + formattedPhone;
+                } else {
+                    formattedPhone = '+' + formattedPhone;
+                }
+            }
+            
+            const authString = Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64');
+            const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Basic ${authString}`,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    To: formattedPhone,
+                    From: process.env.TWILIO_FROM_NUMBER,
+                    Body: message
+                })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                console.log(`[Twilio] SMS successfully sent to ${formattedPhone}. SID: ${data.sid}`);
+                return { success: true, provider: 'twilio' };
+            } else {
+                console.error(`[Twilio] API responded with error:`, data);
+            }
+        } catch (err) {
+            console.error('[Twilio] Error sending SMS:', err.message);
+        }
+    }
+    
+    // 3. Fallback to Simulated SMS (No keys configured or sending failed)
+    console.log(`[SIMULATED SMS to ${phone}]: ${message}`);
+    return { success: false, provider: 'simulation' };
+}
+
 // --- AUTH ROUTES ---
 app.post('/api/auth/signup', async (req, res) => {
     try {
@@ -191,9 +271,15 @@ app.post('/api/doctor/create-patient', authenticate, async (req, res) => {
             await connection.commit();
             
             const smsMessage = `Welcome to MedGuardian! Your UserID is ${userid}. This acts as your login key.`;
-            console.log(`[SIMULATED SMS to ${phone}]: ${smsMessage}`);
+            const smsResult = await sendSMS(phone, smsMessage);
             
-            res.status(201).json({ message: 'Patient created successfully', patientId, simulatedSms: smsMessage });
+            res.status(201).json({ 
+                message: smsResult.success ? `Patient created and SMS sent via ${smsResult.provider}!` : 'Patient created successfully', 
+                patientId, 
+                simulatedSms: smsResult.provider === 'simulation' ? smsMessage : null,
+                smsSent: smsResult.success,
+                smsProvider: smsResult.provider
+            });
         } catch (err) {
             await connection.rollback();
             if (err.code === 'ER_DUP_ENTRY') {
